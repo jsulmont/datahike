@@ -714,20 +714,32 @@
                      :key       k
                      :value     v}))))
 
+
+
+(defn- validate-tuple-schema [a kv]
+  (let [tuple?     (= :db.type/tuple (:db/valueType kv))
+          tupleAttrs (:db/tupleAttrs kv)]
+      (when (and tuple? (not (vector? tupleAttrs)))
+        (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleAttrs ...} should be a vector}")
+                 {:error     :schema/validation
+                  :attribute a
+                  :key       :db/tupleAttrs})))))
+
 (defn- validate-schema [schema]
   (doseq [[a kv] schema]
     (let [comp? (:db/isComponent kv false)]
       (validate-schema-key a :db/isComponent (:db/isComponent kv) #{true false})
       (when (and comp? (not= (:db/valueType kv) :db.type/ref))
         (throw (ex-info (str "Bad attribute specification for " a ": {:db/isComponent true} should also have {:db/valueType :db.type/ref}")
-                        {:error     :schema/validation
-                         :attribute a
-                         :key       :db/isComponent}))))
+                 {:error     :schema/validation
+                  :attribute a
+                  :key       :db/isComponent}))))
     ;; TODO: Add a case here for 'tuples'
     ;; TODO; write test first
     (validate-schema-key a :db/unique (:db/unique kv) #{:db.unique/value :db.unique/identity})
-    (validate-schema-key a :db/valueType (:db/valueType kv) #{:db.type/ref})
-    (validate-schema-key a :db/cardinality (:db/cardinality kv) #{:db.cardinality/one :db.cardinality/many})))
+    (validate-schema-key a :db/valueType (:db/valueType kv) #{:db.type/ref :db.type/tuple})
+    (validate-schema-key a :db/cardinality (:db/cardinality kv) #{:db.cardinality/one :db.cardinality/many})
+    (validate-tuple-schema a kv)))
 
 (def ^:const br 300)
 (def ^:const br-sqrt (long (Math/sqrt br)))

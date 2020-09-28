@@ -33,9 +33,10 @@
     :db.type/string
     :db.type/symbol
     :db.type/uuid
-    :db.type/value})
+    :db.type/value
+    :db.type/tuple})
 
-;; TODO: add tuples, bytes
+;; TODO: add bytes
 
 (s/def :db.type/cardinality #{:db.cardinality/one :db.cardinality/many})
 (s/def :db.type/unique #{:db.unique/identity :db.unique/value})
@@ -43,7 +44,7 @@
 ;; only for old datomic compliance, will be part of partioning in the future
 (s/def :db.type.install/_attribute #{:db.part/tx :db.part/db :db.part/user})
 
-(s/def ::schema-attribute #{:db/id :db/ident :db/isComponent :db/noHistory :db/valueType :db/cardinality :db/unique :db/index :db.install/_attribute :db/doc})
+(s/def ::schema-attribute #{:db/id :db/ident :db/isComponent :db/noHistory :db/valueType :db/cardinality :db/unique :db/index :db.install/_attribute :db/doc :db/tupleAttrs})
 (s/def ::entity-spec-attribute #{:db/ensure :db.entity/attrs :db.entity/preds})
 (s/def ::meta-attribute #{:db/txInstant :db/retracted})
 
