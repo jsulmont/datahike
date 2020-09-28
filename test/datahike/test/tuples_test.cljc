@@ -10,6 +10,4 @@
 (deftest test-schema
   (testing "composite tuple"
     (is (d/empty-db {:reg/semester+course+student {:db/valueType   :db.type/tuple
-                                                   :db/tupleAttrs  [:reg/course :reg/semester :reg/student]
-                                                   :db/cardinality :db.cardinality/one
-                                                   :db/unique      :db.unique/identity}}))))
+                                                   :db/tupleAttrs  [:reg/course :reg/semester :reg/student]}}))))
