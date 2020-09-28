@@ -723,6 +723,8 @@
                         {:error     :schema/validation
                          :attribute a
                          :key       :db/isComponent}))))
+    ;; TODO: Add a case here for 'tuples'
+    ;; TODO; write test first
     (validate-schema-key a :db/unique (:db/unique kv) #{:db.unique/value :db.unique/identity})
     (validate-schema-key a :db/valueType (:db/valueType kv) #{:db.type/ref})
     (validate-schema-key a :db/cardinality (:db/cardinality kv) #{:db.cardinality/one :db.cardinality/many})))
