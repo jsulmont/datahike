@@ -724,7 +724,7 @@
                                 {:error     :schema/validation
                                  :attribute a
                                  :key       :db/tupleAttrs})))
-      :db/tupleTypes (when (not (vector? (:db/tupleTypes kv)))
+      :db/tupleTypes (when (not (vector? (:db/tupleTypes kv))) ;; TODO: check that there are 2-8 *scalars*
                        (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleTypes ...} should be a vector}")
                                 {:error     :schema/validation
                                  :attribute a
