@@ -718,12 +718,22 @@
 
 (defn- validate-tuple-schema [a kv]
   (when (= :db.type/tuple (:db/valueType kv))
-    (let [tupleAttrs (:db/tupleAttrs kv)]
-      (when (not (vector? tupleAttrs))
-        (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleAttrs ...} should be a vector}")
-                 {:error     :schema/validation
-                  :attribute a
-                  :key       :db/tupleAttrs}))))))
+    (case (some #{:db/tupleAttrs :db/tupleTypes :db/tupleType} (keys kv))
+      :db/tupleAttrs (when (not (vector? (:db/tupleAttrs kv)))
+                       (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleAttrs ...} should be a vector}")
+                                {:error     :schema/validation
+                                 :attribute a
+                                 :key       :db/tupleAttrs})))
+      :db/tupleTypes (when (not (vector? (:db/tupleTypes kv)))
+                       (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleTypes ...} should be a vector}")
+                                {:error     :schema/validation
+                                 :attribute a
+                                 :key       :db/tupleTypes})))
+      :db/tupleType  (when (not (keyword? (:db/tupleType kv)))
+                      (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleType ...} should be a keyword}")
+                               {:error     :schema/validation
+                                :attribute a
+                                :key       :db/tupleType}))))))
 
 (defn- validate-schema [schema]
   (doseq [[a kv] schema]
@@ -734,8 +744,6 @@
                  {:error     :schema/validation
                   :attribute a
                   :key       :db/isComponent}))))
-    ;; TODO: Add a case here for 'tuples'
-    ;; TODO; write test first
     (validate-schema-key a :db/unique (:db/unique kv) #{:db.unique/value :db.unique/identity})
     (validate-schema-key a :db/valueType (:db/valueType kv) #{:db.type/ref :db.type/tuple})
     (validate-schema-key a :db/cardinality (:db/cardinality kv) #{:db.cardinality/one :db.cardinality/many})
