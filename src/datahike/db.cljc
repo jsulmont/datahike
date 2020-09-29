@@ -717,13 +717,13 @@
 
 
 (defn- validate-tuple-schema [a kv]
-  (let [tuple?     (= :db.type/tuple (:db/valueType kv))
-          tupleAttrs (:db/tupleAttrs kv)]
-      (when (and tuple? (not (vector? tupleAttrs)))
+  (when (= :db.type/tuple (:db/valueType kv))
+    (let [tupleAttrs (:db/tupleAttrs kv)]
+      (when (not (vector? tupleAttrs))
         (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleAttrs ...} should be a vector}")
                  {:error     :schema/validation
                   :attribute a
-                  :key       :db/tupleAttrs})))))
+                  :key       :db/tupleAttrs}))))))
 
 (defn- validate-schema [schema]
   (doseq [[a kv] schema]
