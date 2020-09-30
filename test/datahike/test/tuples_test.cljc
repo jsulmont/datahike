@@ -34,23 +34,23 @@
 
 
 (deftest test-transaction
-  (testing "composite tuple"
+  (testing "homogeneous tuple"
     (let [_    (da/delete-database)
-          db   (da/create-database)
+          _    (da/create-database)
           conn (da/connect)]
+      (d/transact conn [{:db/ident       :db/reg
+                         :db/valueType   :db.type/tuple
+                         :db/tupleType   :db.type/keyword
+                         :db/cardinality :db.cardinality/one}])
+      (d/transact conn [{:db/reg [:reg/course :reg/semester :reg/student]}])))
+
+
+  #_(testing "composite tuple"
+      (let [_    (da/delete-database)
+            db   (da/create-database)
+            conn (da/connect)]
       (d/transact conn reg-schema)
       (d/transact conn [{:reg/course   "BIO-101"
                          :reg/semester "2018-fall"
                          :reg/student  "johndoe@university.edu"}])))
-
-  (testing "homogeneous tuple"
-    (let [_    (da/delete-database)
-          db   (da/create-database)
-          conn (da/connect)]
-      ;; TODO: add :db/tupleType to dg schema defs
-      (d/transact conn [{:db/ident :db/tupleAttrs
-                         :db/valueType :db.type/tuple
-                         :db/tupleType :db.type/keyword}])
-      (d/transact conn [{:db/tupleAttrs [:reg/course :reg/semester :reg/student]}]))
-    )
     )
