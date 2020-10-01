@@ -24,6 +24,7 @@
 
 
 (deftest test-transaction
+  ;; TODO: how to ensure that there are only 2 to 8 elements in the vector?
   (testing "homogeneous tuple"
     (let [_    (da/delete-database)
           _    (da/create-database)
@@ -34,7 +35,7 @@
                              :db/cardinality :db.cardinality/one}]))
       (d/transact conn [{:db/reg [:reg/course :reg/semester :reg/student]}])))
 
-  (testing "homogeneous tuple"
+  (testing "heterogeneous tuple"
     (let [_    (da/delete-database)
           _    (da/create-database)
           conn (da/connect)]
