@@ -45,7 +45,7 @@
 ;; only for old datomic compliance, will be part of partioning in the future
 (s/def :db.type.install/_attribute #{:db.part/tx :db.part/db :db.part/user})
 
-(s/def ::schema-attribute #{:db/id :db/ident :db/isComponent :db/noHistory :db/valueType :db/cardinality :db/unique :db/index :db.install/_attribute :db/doc :db/tupleAttrs :db/tupleType})
+(s/def ::schema-attribute #{:db/id :db/ident :db/isComponent :db/noHistory :db/valueType :db/cardinality :db/unique :db/index :db.install/_attribute :db/doc :db/tupleAttrs  :db/tupleType :db/tupleTypes})
 
 (s/def ::entity-spec-attribute #{:db/ensure :db.entity/attrs :db.entity/preds})
 (s/def ::meta-attribute #{:db/txInstant :db/retracted})
@@ -103,9 +103,13 @@
                                                            :db/unique      :db.unique/identity
                                                            :db/cardinality :db.cardinality/one}
                                    :db/tupleType {:db/valueType :db.type/value
-                                                  :db/cardinality :db.cardinality/one}})
+                                                  :db/cardinality :db.cardinality/one}
+                                   :db/tupleTypes {:db/valueType :db.type/tuple
+                                                   :db/cardinality :db.cardinality/one}
+                                   :db/tupleAttrs {:db/valueType :db.type/tuple
+                                                   :db/cardinality :db.cardinality/one}})
 
-(def schema-keys #{:db/ident :db/isComponent :db/noHistory :db/valueType :db/cardinality :db/unique :db/index :db.install/_attribute :db/doc :db/tupleType})
+(def schema-keys #{:db/ident :db/isComponent :db/noHistory :db/valueType :db/cardinality :db/unique :db/index :db.install/_attribute :db/doc :db/tupleType :db/tupleTypes :db/tupleAttrs})
 
 (s/def ::old-schema-val (s/keys :req [:db/valueType :db/cardinality]
                                 :opt [:db/ident :db/unique :db/index :db.install/_attribute :db/doc :db/noHistory]))

@@ -22,35 +22,46 @@
                                       :db/tupleType :db.type/keyword}}))))
 
 
-(def reg-schema [{:db/ident       :reg/course
-                  :db/valueType   :db.type/string
-                  :db/cardinality :db.cardinality/one}
-                 {:db/ident       :reg/semester
-                  :db/valueType   :db.type/string
-                  :db/cardinality :db.cardinality/one}
-                 {:db/ident       :reg/student
-                  :db/valueType   :db.type/string
-                  :db/cardinality :db.cardinality/one}])
-
 
 (deftest test-transaction
   (testing "homogeneous tuple"
     (let [_    (da/delete-database)
           _    (da/create-database)
           conn (da/connect)]
-      (d/transact conn [{:db/ident       :db/reg
-                         :db/valueType   :db.type/tuple
-                         :db/tupleType   :db.type/keyword
-                         :db/cardinality :db.cardinality/one}])
+      (is (d/transact conn [{:db/ident       :db/reg
+                             :db/valueType   :db.type/tuple
+                             :db/tupleType   :db.type/keyword
+                             :db/cardinality :db.cardinality/one}]))
       (d/transact conn [{:db/reg [:reg/course :reg/semester :reg/student]}])))
 
+  (testing "homogeneous tuple"
+    (let [_    (da/delete-database)
+          _    (da/create-database)
+          conn (da/connect)]
+      (d/transact conn [{:db/ident       :db/coord
+                         :db/valueType   :db.type/tuple
+                         :db/tupleTypes  [:db.type/long :db.type/keyword]
+                         :db/cardinality :db.cardinality/one}])
+      (d/transact conn [{:db/coord [100 :coord/west]}])))
 
-  #_(testing "composite tuple"
-      (let [_    (da/delete-database)
-            db   (da/create-database)
-            conn (da/connect)]
+  (testing "composite tuple"
+    (let [_          (da/delete-database)
+          _          (da/create-database)
+          conn       (da/connect)
+          reg-schema [{:db/ident       :reg/course
+                       :db/valueType   :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident       :reg/semester
+                       :db/valueType   :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident       :reg/student
+                       :db/valueType   :db.type/string
+                       :db/cardinality :db.cardinality/one}]]
       (d/transact conn reg-schema)
+      (is (d/transact conn [{:db/ident       :reg/semester+course+student
+                             :db/valueType   :db.type/tuple
+                             :db/tupleAttrs  [:reg/course :reg/semester :reg/student]
+                             :db/cardinality :db.cardinality/one}]))
       (d/transact conn [{:reg/course   "BIO-101"
                          :reg/semester "2018-fall"
-                         :reg/student  "johndoe@university.edu"}])))
-    )
+                         :reg/student  "johndoe@university.edu"}]))))
