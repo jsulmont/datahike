@@ -66,3 +66,18 @@
       (d/transact conn [{:reg/course   "BIO-101"
                          :reg/semester "2018-fall"
                          :reg/student  "johndoe@university.edu"}]))))
+
+
+(deftest test-saving-vector
+  (let [_    (da/delete-database)
+        _    (da/create-database)
+        conn (da/connect)]
+    (d/transact conn [{:db/ident       :db/coord
+                       :db/valueType   :db.type/tuple
+                       :db/tupleTypes  [:db.type/long :db.type/keyword]
+                       :db/cardinality :db.cardinality/one}])
+    (d/transact conn [[:db/add 100 :db/coord [100 :coord/west]]])
+    (is (= #{[[100 :coord/west]]}
+          (d/q '[:find ?v
+                 :where [_ :db/coord ?v]]
+            @conn)))))
