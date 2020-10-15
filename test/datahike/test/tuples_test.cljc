@@ -22,13 +22,16 @@
                                       :db/tupleType :db.type/keyword}}))))
 
 
+(defn connect
+  []
+  (da/delete-database)
+  (da/create-database)
+  (da/connect))
 
 (deftest test-transaction
   ;; TODO: how to ensure that there are only 2 to 8 elements in the vector?
   (testing "homogeneous tuple"
-    (let [_    (da/delete-database)
-          _    (da/create-database)
-          conn (da/connect)]
+    (let [conn (connect)]
       (is (d/transact conn [{:db/ident       :db/reg
                              :db/valueType   :db.type/tuple
                              :db/tupleType   :db.type/keyword
@@ -36,9 +39,7 @@
       (d/transact conn [{:db/reg [:reg/course :reg/semester :reg/student]}])))
 
   (testing "heterogeneous tuple"
-    (let [_    (da/delete-database)
-          _    (da/create-database)
-          conn (da/connect)]
+    (let [conn (connect)]
       (d/transact conn [{:db/ident       :db/coord
                          :db/valueType   :db.type/tuple
                          :db/tupleTypes  [:db.type/long :db.type/keyword]
@@ -46,9 +47,7 @@
       (d/transact conn [{:db/coord [100 :coord/west]}])))
 
   (testing "composite tuple"
-    (let [_          (da/delete-database)
-          _          (da/create-database)
-          conn       (da/connect)
+    (let [conn (connect)
           reg-schema [{:db/ident       :reg/course
                        :db/valueType   :db.type/string
                        :db/cardinality :db.cardinality/one}
@@ -69,15 +68,25 @@
 
 
 (deftest test-saving-vector
-  (let [_    (da/delete-database)
-        _    (da/create-database)
-        conn (da/connect)]
-    (d/transact conn [{:db/ident       :db/coord
-                       :db/valueType   :db.type/tuple
-                       :db/tupleTypes  [:db.type/long :db.type/keyword]
-                       :db/cardinality :db.cardinality/one}])
-    (d/transact conn [[:db/add 100 :db/coord [100 :coord/west]]])
-    (is (= #{[[100 :coord/west]]}
-          (d/q '[:find ?v
-                 :where [_ :db/coord ?v]]
-            @conn)))))
+  (testing "heterogeneous"
+    (let [conn (connect)]
+      (d/transact conn [{:db/ident       :db/coord
+                         :db/valueType   :db.type/tuple
+                         :db/tupleTypes  [:db.type/long :db.type/keyword]
+                         :db/cardinality :db.cardinality/one}])
+      (d/transact conn [[:db/add 100 :db/coord [100 :coord/west]]])
+      (is (= #{[[100 :coord/west]]}
+            (d/q '[:find ?v
+                   :where [_ :db/coord ?v]]
+              @conn)))))
+  (testing "homogeneous"
+    (let [conn (connect)]
+      (d/transact conn [{:db/ident       :db/coord
+                         :db/valueType   :db.type/tuple
+                         :db/tupleType   :db.type/long
+                         :db/cardinality :db.cardinality/one}])
+      (d/transact conn [[:db/add 100 :db/coord [100 200 300]]])
+      (is (= #{[[100 200 300]]}
+            (d/q '[:find ?v
+                   :where [_ :db/coord ?v]]
+              @conn))))))
