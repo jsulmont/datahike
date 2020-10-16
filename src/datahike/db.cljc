@@ -691,19 +691,91 @@
           :db/noHistory [:db/noHistory]
           [])))))
 
+
+(defn reduce-indexed
+  "Same as reduce, but `f` takes [acc el idx]"
+  [f init xs]
+  (first
+    (reduce
+      (fn [[acc idx] x]
+        (let [res (f acc x idx)]
+          (if (reduced? res)
+            (reduced [res idx])
+            [res (inc idx)])))
+      [init 0]
+      xs)))
+
+
+(defn- attrToTuple
+  "For each attribute involved in a composite tuple, returns the tuple attributes it is involved in, plus its position in the tuple.
+  E.g. {:a => {:a+b+c 0, :a+d 0}
+        :b => {:a+b+c 0}}"
+  [schema rschema]
+  (println "hhheelllll")
+
+  (reduce
+    (fn [m tupleAttrs]
+      (reduce-indexed
+        (fn [m attr idx]
+          (update m attr assoc tupleAttrs idx))
+        m
+        tupleAttrs))
+    {}
+    ;; TODO: Change the below with this, but this is still failing: (:db/tupleAttrs schema)
+    [[:a :b :c] [:a :d]])
+  )
+
 (defn- rschema [schema]
-  (reduce-kv
-   (fn [m attr keys->values]
-     (if (keyword? keys->values)
-       m
-       (reduce-kv
-        (fn [m key value]
-          (reduce
-           (fn [m prop]
-             (assoc m prop (conj (get m prop #{}) attr)))
-           m (attr->properties key value)))
-        (update m :db/ident (fn [coll] (if coll (conj coll attr) #{attr}))) keys->values)))
-   {} schema))
+  (let [rschema (reduce-kv
+                  (fn [m attr keys->values]
+                    (if (keyword? keys->values)
+                      m
+                      (reduce-kv
+                        (fn [m key value]
+                          (reduce
+                            (fn [m prop]
+                              (assoc m prop (conj (get m prop #{}) attr)))
+                            m (attr->properties key value)))
+                        (update m :db/ident (fn [coll] (if coll (conj coll attr) #{attr}))) keys->values)))
+                  {} schema)]
+    (assoc rschema :db/attrToTuple (attrToTuple schema rschema))))
+
+
+
+(comment
+  (defn connect
+    []
+    (datahike.api/delete-database)
+    (datahike.api/create-database {:schema-flexibility :write})
+    (datahike.api/connect))
+
+  (def conn (connect))
+
+  (datahike.core/transact conn [{:db/ident       :a
+                                 :db/valueType   :db.type/long
+                                 :db/cardinality :db.cardinality/one}
+                                ;; {:db/ident       :test/b}
+                                {:db/ident       :test/a+b+c
+                                 :db/valueType   :db.type/tuple
+                                 :db/tupleAttrs  [:a :b :c]
+                                 :db/cardinality :db.cardinality/one}
+                                {:db/ident       :test/a+d
+                                 :db/valueType   :db.type/tuple
+                                 :db/tupleAttrs  [:a :d]
+                                 :db/cardinality :db.cardinality/one}])
+
+  (def db (datahike.api/db conn))
+
+  (def schema (-schema db))
+  schema
+
+  (:db/ident schema)
+  (:db/tupleAttrs schema)
+
+  (-rschema db)
+  )
+
+
 
 (defn- validate-schema-key [a k v expected]
   (when-not (or (nil? v)
