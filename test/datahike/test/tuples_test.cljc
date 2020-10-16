@@ -67,7 +67,7 @@
                          :reg/student  "johndoe@university.edu"}]))))
 
 
-(deftest test-saving-vector
+(deftest test-transacting
   (testing "heterogeneous"
     (let [conn (connect)]
       (d/transact conn [{:db/ident       :db/coord
@@ -90,3 +90,21 @@
             (d/q '[:find ?v
                    :where [_ :db/coord ?v]]
               @conn))))))
+
+
+(deftest test-transacting-composite
+  (testing ""
+    (let [conn (connect)]
+      (d/transact conn [{:db/ident       :a
+                         :db/valueType   :db.type/long
+                         :db/cardinality :db.cardinality/one}
+                        ;; {:db/ident       :test/b}
+                        {:db/ident       :test/a+b+c
+                         :db/valueType   :db.type/tuple
+                         :db/tupleAttrs  [:a :b :c]
+                         :db/cardinality :db.cardinality/one}])
+      (d/transact conn [[:db/add 100 :a 123]])
+
+      #_(is (= (d/entity 1)
+            #{[1 :a 123]
+              })))))
