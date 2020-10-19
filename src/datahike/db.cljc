@@ -709,7 +709,7 @@
 (defn- attrToTuple
   "For each attribute involved in a composite tuple, returns the tuple attributes it is involved in, plus its position in the tuple.
   E.g. {:a => {:a+b+c 0, :a+d 0}
-        :b => {:a+b+c 0}}"
+        :b => {:a+b+c 1}}"
   [schema rschema]
   (println "hhheelllll")
 
