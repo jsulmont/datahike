@@ -25,7 +25,7 @@
 (defn connect
   []
   (da/delete-database)
-  (da/create-database)
+  (da/create-database {:schema-flexibility :write})
   (da/connect))
 
 (deftest test-transaction
