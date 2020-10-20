@@ -706,8 +706,8 @@
       xs)))
 
 
-(defn- attrToTuple
-  "For each attribute involved in a composite tuple, returns the tuple attributes it is involved in, plus its position in the tuple.
+(defn- attrTuples
+  "For each attribute involved in a composite tuple, returns a map made of the tuple attribute it is involved in, plus its position in the tuple.
   E.g. {:a => {:a+b+c 0, :a+d 0}
         :b => {:a+b+c 1}}"
   [schema rschema]
@@ -738,41 +738,51 @@
                             m (attr->properties key value)))
                         (update m :db/ident (fn [coll] (if coll (conj coll attr) #{attr}))) keys->values)))
                   {} schema)]
-    (assoc rschema :db/attrToTuple (attrToTuple schema rschema))))
+    (assoc rschema :db/attrTuples (attrTuples schema rschema))))
 
 
 
 (comment
-  (defn connect
-    []
-    (datahike.api/delete-database)
-    (datahike.api/create-database {:schema-flexibility :write})
-    (datahike.api/connect))
+  (do
+    (defn connect
+      []
+      (datahike.api/delete-database)
+      (datahike.api/create-database {:schema-flexibility :write})
+      (datahike.api/connect))
 
-  (def conn (connect))
+    (def conn (connect))
 
-  (datahike.core/transact conn [{:db/ident       :a
-                                 :db/valueType   :db.type/long
-                                 :db/cardinality :db.cardinality/one}
-                                ;; {:db/ident       :test/b}
-                                {:db/ident       :test/a+b+c
-                                 :db/valueType   :db.type/tuple
-                                 :db/tupleAttrs  [:a :b :c]
-                                 :db/cardinality :db.cardinality/one}
-                                {:db/ident       :test/a+d
-                                 :db/valueType   :db.type/tuple
-                                 :db/tupleAttrs  [:a :d]
-                                 :db/cardinality :db.cardinality/one}])
+    (datahike.core/transact conn [{:db/ident       :a
+                                   :db/valueType   :db.type/long
+                                   :db/cardinality :db.cardinality/one}
+                                  ;; {:db/ident       :test/b}
+                                  {:db/ident       :test/a+b+c
+                                   :db/valueType   :db.type/tuple
+                                   :db/tupleAttrs  [:a :b :c]
+                                   :db/cardinality :db.cardinality/one}
+                                  {:db/ident       :test/a+d
+                                   :db/valueType   :db.type/tuple
+                                   :db/tupleAttrs  [:a :d]
+                                   :db/cardinality :db.cardinality/one}])
 
-  (def db (datahike.api/db conn))
+    (def db (datahike.api/db conn))
 
-  (def schema (-schema db))
-  schema
+    (def schema (-schema db))
+    schema
 
-  (:db/ident schema)
-  (:db/tupleAttrs schema)
+    (:db/ident schema)
+    (:db/tupleAttrs schema)
 
-  (-rschema db)
+    (-rschema db)
+
+    ((-rschema db) :db/attrTuples)
+
+    (def report (datahike.api/transact conn [[:db/add 100 :a 123]]))
+    report
+    )
+
+  (datahike.db/is-attr? db :a  :db/attrTuples)
+  (not (empty? (-attrs-by (:db-before report) :db/attrTuples)))
   )
 
 
