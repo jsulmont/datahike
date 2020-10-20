@@ -1047,6 +1047,10 @@
           :cljs [^boolean no-history?]) [db attr]
   (is-attr? db attr :db/noHistory))
 
+(defn #?@(:clj  [^Boolean tuple-source?]
+          :cljs [^boolean tuple-source?]) [db attr]
+  (is-attr? db attr :db/attrTuples))
+
 (defn entid [db eid]
   {:pre [(db? db)]}
   (cond
@@ -1133,7 +1137,7 @@
 
 (defn- validate-attr [attr at db]
   (if (= :read (get-in db [:config :schema-flexibility]))
-    (when-not (or (keyword? attr) (string? attr))
+    (when-not (or (keyword? attr) (string? attr) (vector? attr))
       (raise "Bad entity attribute " attr " at " at ", expected keyword or string"
              {:error :transact/syntax, :attribute attr, :context at}))
     (when-not (or (ds/meta-attr? attr) (ds/schema-attr? attr) (ds/entity-spec-attr? attr))
@@ -1292,10 +1296,36 @@
       history? (update-in [:temporal-aevt] #(di/-remove % history-datom :aevt))
       (and history? indexing?) (update-in [:temporal-avet] #(di/-remove % history-datom :avet)))))
 
+(defn- queue-tuple [queue tuple idx db e v]
+  (let [tuple-value  (or (get queue tuple)
+                       (:v (first (-datoms db :eavt [e tuple])))
+                       (vec (repeat (-> db (-schema) (get tuple) :db/tupleAttrs count) nil)))
+        tuple-value' (assoc tuple-value idx v)]
+    (assoc queue tuple tuple-value')))
+
+(defn- queue-tuples [queue tuples db e v]
+  "Assuming the attribute we are concerned with is :a and its associated value is 'a',
+   returns e.g. {:a+b+c [a nil nil], :a+d [a, nil]}"
+  (reduce-kv
+    (fn [queue tuple idx]
+      (queue-tuple queue tuple idx db e v))
+    queue
+    tuples))
+
 (defn- transact-report [report datom]
-  (-> report
-      (update-in [:db-after] with-datom datom)
-      (update-in [:tx-data] conj datom)))
+  (let [db      (:db-after report)
+        a       (:a datom)
+        report' (-> report
+                  (update-in [:db-after] with-datom datom)
+                  (update-in [:tx-data] conj datom))]
+    (if (tuple-source? db a)
+      (let [e      (:e datom)
+            v      (if (datom-added datom) (:v datom) nil)
+            queue  (or (-> report' ::queued-tuples (get e)) {})
+            tuples (get (-attrs-by db :db/attrTuples) a)
+            queue' (queue-tuples queue tuples db e v)]
+        (update report' ::queued-tuples assoc e queue'))
+      report')))
 
 (defn- check-upsert-conflict [entity acc]
   (let [[e a v] acc
