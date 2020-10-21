@@ -1100,6 +1100,10 @@
     (string? attr)
     (boolean (re-matches #"(?:([^/]+)/)?_([^/]+)" attr))
 
+    ;; TODO: what are we supposed to do here
+    (vector? attr)
+    attr
+
     :else
     (raise "Bad attribute type: " attr ", expected keyword or string"
            {:error :transact/syntax, :attribute attr})))
@@ -1116,6 +1120,10 @@
       (if (= \_ (nth name 0))
         (if ns (str ns "/" (subs name 1)) (subs name 1))
         (if ns (str ns "/_" name) (str "_" name))))
+
+    ;; TODO: what are we supposed to do here
+    (vector? attr)
+    attr
 
     :else
     (raise "Bad attribute type: " attr ", expected keyword or string"
@@ -1145,9 +1153,11 @@
         (let [attr (if (reverse-ref? attr)
                      (reverse-ref attr)
                      attr)]
-          (when-not (db-idents attr)
-            (raise "Bad entity attribute " attr " at " at ", not defined in current schema"
-                   {:error :transact/schema :attribute attr :context at})))
+
+          ;; TODO: restore this and adapts it for storing tuples ie vectors
+          #_(when-not (db-idents attr)
+              (raise "Bad entity attribute " attr " at " at ", not defined in current schema"
+                {:error :transact/schema :attribute attr :context at})))
         (raise "No schema found in db."
                {:error :transact/schema :attribute attr :context at})))))
 
