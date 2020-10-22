@@ -711,8 +711,6 @@
   E.g. {:a => {:a+b+c 0, :a+d 0}
         :b => {:a+b+c 1}}"
   [schema rschema]
-  (println "hhheelllll")
-
   (reduce
     (fn [m tupleAttrs]
       (reduce-indexed
@@ -722,8 +720,7 @@
         tupleAttrs))
     {}
     ;; TODO: Change the below with this, but this is still failing: (:db/tupleAttrs schema)
-    [[:a :b :c] [:a :d]])
-  )
+    [[:a :b :c] [:a :d]]))
 
 (defn- rschema [schema]
   (let [rschema (reduce-kv
@@ -1519,16 +1516,35 @@
     :db.purge/attribute
     :db.history.purge/before})
 
+(defn flush-tuples [report]
+  (let [db          (:db-after report)
+        schema      (-schema db)
+        attr-tuples (-attrs-by db :db/attrTuples)]
+    (reduce-kv
+      (fn [entities eid tuples+values]
+        (reduce-kv
+          (fn [entities tuple value]
+            (let [value   (if (every? nil? value) nil value)
+                  current (:v (first (-datoms db :eavt [eid tuple])))]
+              (cond
+                (= value current) entities
+                (nil? value)      (conj entities ^::internal [:db/retract eid tuple current])
+                :else             (conj entities ^::internal [:db/add eid tuple value]))))
+          entities
+          tuples+values))
+      []
+      (::queued-tuples report))))
+
 (defn transact-tx-data [initial-report initial-es]
   (when-not (or (nil? initial-es)
-                (sequential? initial-es))
+              (sequential? initial-es))
     (raise "Bad transaction data " initial-es ", expected sequential collection"
       {:error :transact/syntax, :tx-data initial-es}))
   (let [has-tuples? (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples))) ;; TODO: First fix schema to have all the entries and then replace :db/attrTuples here by :db.type/tuple
-_ (println "---- -attrs-by: " (-attrs-by (:db-after initial-report) :db/attrTuples))
-        initial-es' (if has-tuples?
-                      (interleave initial-es (repeat ::flush-tuples))
-                      initial-es)]
+        ;;_ (println "---- -attrs-by: " (-attrs-by (:db-after initial-report) :db/attrTuples))
+        initial-es' initial-es #_(if has-tuples?
+                                  (interleave initial-es (repeat ::flush-tuples))
+                                  initial-es)]
     (loop [report (update initial-report :db-after transient)
            es (if (-keep-history? (get-in initial-report [:db-before]))
                 (concat [[:db/add (current-tx report) :db/txInstant (get-time) (current-tx report)]] initial-es')
@@ -1545,6 +1561,13 @@ _ (println "---- -attrs-by: " (-attrs-by (:db-after initial-report) :db/attrTupl
 
           (nil? entity)
           (recur report entities)
+
+          ;; (= ::flush-tuples entity)
+          ;; (if (contains? report ::queued-tuples)
+          ;;   (recur
+          ;;     (dissoc report ::queued-tuples)
+          ;;     (concat (flush-tuples report) entities))
+          ;;   (recur report entities))
 
           (map? entity)
           (let [old-eid (:db/id entity)]
