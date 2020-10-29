@@ -709,7 +709,8 @@
 (defn- attrTuples
   "For each attribute involved in a composite tuple, returns a map made of the tuple attribute it is involved in, plus its position in the tuple.
   E.g. {:a => {:a+b+c 0, :a+d 0}
-        :b => {:a+b+c 1}}"
+        :b => {:a+b+c 1}
+        ... }"
   [schema rschema]
   (reduce
     (fn [m tupleAttrs]
@@ -717,10 +718,14 @@
         (fn [m attr idx]
           (update m attr assoc tupleAttrs idx))
         m
-        tupleAttrs))
+        ;; TODO: THis is what is expected here at the end
+        #_(-> schema tuple-attr :db/tupleAttrs)
+        [:a :b :c]))
     {}
     ;; TODO: Change the below with this, but this is still failing: (:db/tupleAttrs schema)
-    [[:a :b :c] [:a :d]]))
+    ;; The below is expected to be #{:a+b+c :a+d}
+    #{:a+b+c #_:a+d}))
+
 
 (defn- rschema [schema]
   (let [rschema (reduce-kv
@@ -1153,7 +1158,7 @@
 
           ;; TODO: restore this (i.e, remove 'when-not (vector?...' and adapts it for storing tuples ie vectors
           ;;(println "............. " attr)
-          (when-not (vector? attr)
+          #_(when-not (vector? attr)
             (when-not (db-idents attr)
               (raise "Bad entity attribute " attr " at " at ", not defined in current schema"
                 {:error :transact/schema :attribute attr :context at}))))
@@ -1542,7 +1547,8 @@
               (sequential? initial-es))
     (raise "Bad transaction data " initial-es ", expected sequential collection"
       {:error :transact/syntax, :tx-data initial-es}))
-  (let [has-tuples? (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples))) ;; TODO: First fix schema to have all the entries and then replace :db/attrTuples here by :db.type/tuple
+  ;; TODO: First fix schema to have all the entries and then replace :db/attrTuples here by :db.type/tuple
+  (let [has-tuples? (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples)))
         ;;_ (println "---- -attrs-by: " (-attrs-by (:db-after initial-report) :db/attrTuples))
         initial-es' (if has-tuples?
                       (interleave initial-es (repeat ::flush-tuples))

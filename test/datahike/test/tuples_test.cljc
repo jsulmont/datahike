@@ -99,11 +99,11 @@
                          :db/valueType   :db.type/long
                          :db/cardinality :db.cardinality/one}
                         ;; {:db/ident       :test/b}
-                        {:db/ident       :test/a+b+c
+                        {:db/ident       :a+b+c
                          :db/valueType   :db.type/tuple
                          :db/tupleAttrs  [:a :b :c]
                          :db/cardinality :db.cardinality/one}])
-      (d/transact conn [[:db/add 100 :a 123]])
+      (is (d/transact conn [[:db/add 100 :a 123]]))
 
       #_(is (= (d/entity 1)
             #{[1 :a 123]
