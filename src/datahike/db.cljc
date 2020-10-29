@@ -1544,9 +1544,9 @@
       {:error :transact/syntax, :tx-data initial-es}))
   (let [has-tuples? (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples))) ;; TODO: First fix schema to have all the entries and then replace :db/attrTuples here by :db.type/tuple
         ;;_ (println "---- -attrs-by: " (-attrs-by (:db-after initial-report) :db/attrTuples))
-        initial-es' initial-es #_(if has-tuples?
-                                  (interleave initial-es (repeat ::flush-tuples))
-                                  initial-es)]
+        initial-es' (if has-tuples?
+                      (interleave initial-es (repeat ::flush-tuples))
+                      initial-es)]
     (loop [report (update initial-report :db-after transient)
            es (if (-keep-history? (get-in initial-report [:db-before]))
                 (concat [[:db/add (current-tx report) :db/txInstant (get-time) (current-tx report)]] initial-es')
@@ -1564,12 +1564,12 @@
           (nil? entity)
           (recur report entities)
 
-          ;; (= ::flush-tuples entity)
-          ;; (if (contains? report ::queued-tuples)
-          ;;   (recur
-          ;;     (dissoc report ::queued-tuples)
-          ;;     (concat (flush-tuples report) entities))
-          ;;   (recur report entities))
+          (= ::flush-tuples entity)
+          (if (contains? report ::queued-tuples)
+            (recur
+              (dissoc report ::queued-tuples)
+              (concat (flush-tuples report) entities))
+            (recur report entities))
 
           (map? entity)
           (let [old-eid (:db/id entity)]
