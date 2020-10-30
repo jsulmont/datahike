@@ -1549,7 +1549,7 @@
     (raise "Bad transaction data " initial-es ", expected sequential collection"
       {:error :transact/syntax, :tx-data initial-es}))
   ;; TODO: First fix schema to have all the entries and then replace :db/attrTuples here by :db.type/tuple
-  (let [has-tuples? (not (empty? (-attrs-by (:db-after initial-report) :db/attrTuples)))
+  (let [has-tuples? (seq (-attrs-by (:db-after initial-report) :db.type/tuple))
         ;;_ (println "---- -attrs-by: " (-attrs-by (:db-after initial-report) :db/attrTuples))
         initial-es' (if has-tuples?
                       (interleave initial-es (repeat ::flush-tuples))
