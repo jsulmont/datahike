@@ -1152,13 +1152,9 @@
         (let [attr (if (reverse-ref? attr)
                      (reverse-ref attr)
                      attr)]
-
-          ;; TODO: restore this (i.e, remove 'when-not (vector?...' and adapts it for storing tuples ie vectors
-          ;;(println "............. " attr)
-          #_(when-not (vector? attr)
-            (when-not (db-idents attr)
-              (raise "Bad entity attribute " attr " at " at ", not defined in current schema"
-                {:error :transact/schema :attribute attr :context at}))))
+          (when-not (db-idents attr)
+            (raise "Bad entity attribute " attr " at " at ", not defined in current schema"
+              {:error :transact/schema :attribute attr :context at})))
         (raise "No schema found in db."
                {:error :transact/schema :attribute attr :context at})))))
 
