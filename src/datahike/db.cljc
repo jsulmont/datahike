@@ -714,18 +714,14 @@
         ... }"
   [schema rschema]
   (reduce
-    (fn [m tupleAttrs]
+    (fn [m tuple-attr]
       (reduce-indexed
         (fn [m attr idx]
-          (update m attr assoc tupleAttrs idx))
+          (update m attr assoc tuple-attr idx))
         m
-        ;; TODO: THis is what is expected here at the end
-        #_(-> schema tuple-attr :db/tupleAttrs)
-        [:a :b :c]))
+        (-> schema tuple-attr :db/tupleAttrs)))
     {}
-    ;; TODO: Change the below with this, but this is still failing: (:db/tupleAttrs schema)
-    ;; The below is expected to be #{:a+b+c :a+d}
-    #{:a+b+c #_:a+d}))
+    (:db.type/tuple rschema)))
 
 
 (defn- rschema [schema]
