@@ -682,6 +682,7 @@
     :db.unique/value [:db/unique :db.unique/value :db/index]
     :db.cardinality/many [:db.cardinality/many]
     :db.type/ref [:db.type/ref :db/index]
+    :db.type/tuple [:db.type/tuple]
     (if (= k :db/ident)
       [:db/ident]
       (when (true? v)
