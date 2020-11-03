@@ -158,52 +158,52 @@
         [e :a+b   ["a" "b"]]
         [e :a+c+d ["a" nil nil]]}
 
-      ;; [[:db/add e :a "A"]]
-      ;; #{[e :a     "A"]
-      ;;   [e :b     "b"]
-      ;;   [e :a+b   ["A" "b"]]
-      ;;   [e :a+c+d ["A" nil nil]]}
+      [[:db/add e :a "A"]]
+      #{[e :a     "A"]
+        [e :b     "b"]
+        [e :a+b   ["A" "b"]]
+        [e :a+c+d ["A" nil nil]]}
 
-      ;; [[:db/add e :c "c"]
-      ;;  [:db/add e :d "d"]]
-      ;; #{[e :a     "A"]
-      ;;   [e :b     "b"]
-      ;;   [e :a+b   ["A" "b"]]
-      ;;   [e :c     "c"]
-      ;;   [e :d     "d"]
-      ;;   [e :a+c+d ["A" "c" "d"]]}
+      [[:db/add e :c "c"]
+       [:db/add e :d "d"]]
+      #{[e :a     "A"]
+        [e :b     "b"]
+        [e :a+b   ["A" "b"]]
+        [e :c     "c"]
+        [e :d     "d"]
+        [e :a+c+d ["A" "c" "d"]]}
 
-      ;; [[:db/add e :a "a"]]
-      ;; #{[e :a     "a"]
-      ;;   [e :b     "b"]
-      ;;   [e :a+b   ["a" "b"]]
-      ;;   [e :c     "c"]
-      ;;   [e :d     "d"]
-      ;;   [e :a+c+d ["a" "c" "d"]]}
+      [[:db/add e :a "a"]]
+      #{[e :a     "a"]
+        [e :b     "b"]
+        [e :a+b   ["a" "b"]]
+        [e :c     "c"]
+        [e :d     "d"]
+        [e :a+c+d ["a" "c" "d"]]}
 
-      ;; [[:db/add e :a "A"]
-      ;;  [:db/add e :b "B"]
-      ;;  [:db/add e :c "C"]
-      ;;  [:db/add e :d "D"]]
-      ;; #{[e :a     "A"]
-      ;;   [e :b     "B"]
-      ;;   [e :a+b   ["A" "B"]]
-      ;;   [e :c     "C"]
-      ;;   [e :d     "D"]
-      ;;   [e :a+c+d ["A" "C" "D"]]}
+      [[:db/add e :a "A"]
+       [:db/add e :b "B"]
+       [:db/add e :c "C"]
+       [:db/add e :d "D"]]
+      #{[e :a     "A"]
+        [e :b     "B"]
+        [e :a+b   ["A" "B"]]
+        [e :c     "C"]
+        [e :d     "D"]
+        [e :a+c+d ["A" "C" "D"]]}
 
-      ;; [[:db/retract e :a "A"]]
-      ;; #{[e :b     "B"]
-      ;;   [e :a+b   [nil "B"]]
-      ;;   [e :c     "C"]
-      ;;   [e :d     "D"]
-      ;;   [e :a+c+d [nil "C" "D"]]}
+      [[:db/retract e :a "A"]]
+      #{[e :b     "B"]
+        [e :a+b   [nil "B"]]
+        [e :c     "C"]
+        [e :d     "D"]
+        [e :a+c+d [nil "C" "D"]]}
 
-      ;; [[:db/retract e :b "B"]]
-      ;; #{[e :c     "C"]
-      ;;   [e :d     "D"]
-      ;;   [e :a+c+d [nil "C" "D"]]}
+      [[:db/retract e :b "B"]]
+      #{[e :c     "C"]
+        [e :d     "D"]
+        [e :a+c+d [nil "C" "D"]]}
       )
 
-    #_(is (thrown-msg? "Can’t modify tuple attrs directly: [:db/add 1 :a+b [\"A\" \"B\"]]"
+    (is (thrown-msg? "Can’t modify tuple attrs directly: [:db/add 1 :a+b [\"A\" \"B\"]]"
           (d/transact! conn [{:db/id 1 :a+b ["A" "B"]}])))))
