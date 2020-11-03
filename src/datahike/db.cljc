@@ -740,52 +740,6 @@
     (assoc rschema :db/attrTuples (attrTuples schema rschema))))
 
 
-
-(comment
-  (do
-    (defn connect
-      []
-      (datahike.api/delete-database)
-      (datahike.api/create-database {:schema-flexibility :write})
-      (datahike.api/connect))
-
-    (def conn (connect))
-
-    (datahike.core/transact conn [{:db/ident       :a
-                                   :db/valueType   :db.type/long
-                                   :db/cardinality :db.cardinality/one}
-                                  ;; {:db/ident       :test/b}
-                                  {:db/ident       :test/a+b+c
-                                   :db/valueType   :db.type/tuple
-                                   :db/tupleAttrs  [:a :b :c]
-                                   :db/cardinality :db.cardinality/one}
-                                  {:db/ident       :test/a+d
-                                   :db/valueType   :db.type/tuple
-                                   :db/tupleAttrs  [:a :d]
-                                   :db/cardinality :db.cardinality/one}])
-
-    (def db (datahike.api/db conn))
-
-    (def schema (-schema db))
-    schema
-
-    (:db/ident schema)
-    (:db/tupleAttrs schema)
-
-    (-rschema db)
-
-    ((-rschema db) :db/attrTuples)
-
-    (def report (datahike.api/transact conn [[:db/add 100 :a 123]]))
-    report
-    )
-
-  (datahike.db/is-attr? db :a  :db/attrTuples)
-  (not (empty? (-attrs-by (:db-before report) :db/attrTuples)))
-  )
-
-
-
 (defn- validate-schema-key [a k v expected]
   (when-not (or (nil? v)
                 (contains? expected v))
@@ -1312,7 +1266,7 @@
 
 (defn- queue-tuples [queue tuples db e v]
   "Assuming the attribute we are concerned with is :a and its associated value is 'a',
-   returns e.g. {:a+b+c [a nil nil], :a+d [a, nil]}"
+   returns {:a+b+c [a nil nil], :a+d [a, nil]}"
   (reduce-kv
     (fn [queue tuple idx]
       (queue-tuple queue tuple idx db e v))

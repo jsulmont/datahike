@@ -104,7 +104,106 @@
                          :db/tupleAttrs  [:a :b :c]
                          :db/cardinality :db.cardinality/one}])
       (is (d/transact conn [[:db/add 100 :a 123]]))
+      (is (= #{[123]}
+            (d/q '[:find ?v
+                   :where [100 :a ?v]]
+              @conn)))
+      (is (= #{[100 [123 nil nil]]}
+            (d/q '[:find ?e ?v
+                   :where [?e :a+b+c ?v]]
+              @conn)))
+      ;; TODO: weird, when we specify the 'e' it does not work where the previous query shows that it should work.
+      #_(is (= #{[[123 nil nil]]}
+            (d/q '[:find ?v
+                   :where [100 :a+b+c ?v]]
+              @conn)))
+      )))
 
-      #_(is (= (d/entity 1)
-            #{[1 :a 123]
-              })))))
+(defn all-datoms [db eid]
+  (into #{} (map (juxt :e :a :v)) (d/datoms db :eavt eid)))
+
+
+(deftest test-tx
+  (let [conn (connect)
+        e    100]
+    (d/transact conn [{:db/ident :a
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :b
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :c
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :d
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :a+b
+                       :db/valueType :db.type/tuple
+                       :db/tupleAttrs [:a :b]
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :a+c+d
+                       :db/valueType :db.type/tuple
+                       :db/tupleAttrs [:a :c :d]
+                       :db/cardinality :db.cardinality/one}])
+    (are [tx datoms] (= datoms (all-datoms (:db-after (d/transact! conn tx)) e))
+      [[:db/add e :a "a"]]
+      #{[e :a     "a"]
+        [e :a+b   ["a" nil]]
+        [e :a+c+d ["a" nil nil]]}
+
+      [[:db/add e :b "b"]]
+      #{[e :a     "a"]
+        [e :b     "b"]
+        [e :a+b   ["a" "b"]]
+        [e :a+c+d ["a" nil nil]]}
+
+      ;; [[:db/add e :a "A"]]
+      ;; #{[e :a     "A"]
+      ;;   [e :b     "b"]
+      ;;   [e :a+b   ["A" "b"]]
+      ;;   [e :a+c+d ["A" nil nil]]}
+
+      ;; [[:db/add e :c "c"]
+      ;;  [:db/add e :d "d"]]
+      ;; #{[e :a     "A"]
+      ;;   [e :b     "b"]
+      ;;   [e :a+b   ["A" "b"]]
+      ;;   [e :c     "c"]
+      ;;   [e :d     "d"]
+      ;;   [e :a+c+d ["A" "c" "d"]]}
+
+      ;; [[:db/add e :a "a"]]
+      ;; #{[e :a     "a"]
+      ;;   [e :b     "b"]
+      ;;   [e :a+b   ["a" "b"]]
+      ;;   [e :c     "c"]
+      ;;   [e :d     "d"]
+      ;;   [e :a+c+d ["a" "c" "d"]]}
+
+      ;; [[:db/add e :a "A"]
+      ;;  [:db/add e :b "B"]
+      ;;  [:db/add e :c "C"]
+      ;;  [:db/add e :d "D"]]
+      ;; #{[e :a     "A"]
+      ;;   [e :b     "B"]
+      ;;   [e :a+b   ["A" "B"]]
+      ;;   [e :c     "C"]
+      ;;   [e :d     "D"]
+      ;;   [e :a+c+d ["A" "C" "D"]]}
+
+      ;; [[:db/retract e :a "A"]]
+      ;; #{[e :b     "B"]
+      ;;   [e :a+b   [nil "B"]]
+      ;;   [e :c     "C"]
+      ;;   [e :d     "D"]
+      ;;   [e :a+c+d [nil "C" "D"]]}
+
+      ;; [[:db/retract e :b "B"]]
+      ;; #{[e :c     "C"]
+      ;;   [e :d     "D"]
+      ;;   [e :a+c+d [nil "C" "D"]]}
+      )
+
+    #_(is (thrown-msg? "Can’t modify tuple attrs directly: [:db/add 1 :a+b [\"A\" \"B\"]]"
+          (d/transact! conn [{:db/id 1 :a+b ["A" "B"]}])))))
