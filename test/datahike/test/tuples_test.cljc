@@ -305,31 +305,6 @@
             :c     "c"}
           (d/pull (d/db conn) '[*] [:a+b ["a" "b"]])))))
 
-
-
-(comment
-  (def conn (connect))
-  (d/transact conn [{:db/ident :a
-                     :db/valueType :db.type/string
-                     :db/cardinality :db.cardinality/one}
-                    {:db/ident :b
-                     :db/valueType :db.type/string
-                     :db/cardinality :db.cardinality/one}
-                    {:db/ident :a+b
-                     :db/valueType :db.type/tuple
-                     :db/tupleAttrs [:a :b]
-                     :db/cardinality :db.cardinality/one}])
-
-  (d/transact conn [{:db/id 100 :a "A" :b "B"}
-                      {:db/id 200 :a "A" :b "b"}
-                      {:db/id 300 :a "a" :b "B"}
-                    {:db/id 400 :a "a" :b "b"}])
-
-  (mapcat #(d/datoms @conn :eavt %) [100 200])
-
-
-  )
-
 (deftest test-unique
   (let [conn (connect)]
     (d/transact conn [{:db/ident :a
