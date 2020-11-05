@@ -383,10 +383,51 @@
       (is (= {:db/id 4 :a "a" :b "b" :a+b ["a" "b"]}
             (d/pull (d/db conn) '[*] 4))))))
 
-#_(deftest test-upsert
-  (let [conn (d/create-conn {:a+b {:db/tupleAttrs [:a :b]
-                                   :db/unique :db.unique/identity}
-                             :c   {:db/unique :db.unique/identity}})]
+
+(comment
+  (def conn (connect))
+  (d/transact conn [{:db/ident :a
+                     :db/valueType :db.type/string
+                     :db/cardinality :db.cardinality/one}
+                    {:db/ident :b
+                     :db/valueType :db.type/string
+                     :db/cardinality :db.cardinality/one}
+                    {:db/ident :a+b
+                     :db/valueType :db.type/tuple
+                     :db/tupleAttrs [:a :b]
+                     :db/cardinality :db.cardinality/one}])
+
+  (d/transact conn [{:db/id 100 :a "A" :b "B"}
+                      {:db/id 200 :a "A" :b "b"}
+                      {:db/id 300 :a "a" :b "B"}
+                    {:db/id 400 :a "a" :b "b"}])
+
+  (mapcat #(d/datoms @conn :eavt %) [100 200])
+
+  )
+
+
+(deftest test-upsert
+  (let [conn (connect)]
+    (d/transact conn [{:db/ident :a
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :b
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :c
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one
+                       :db/unique :db.unique/identity}
+                      {:db/ident :d
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one
+                       :db/unique :db.unique/identity}
+                      {:db/ident :a+b
+                       :db/valueType :db.type/tuple
+                       :db/tupleAttrs [:a :b]
+                       :db/cardinality :db.cardinality/one
+                       :db/unique :db.unique/identity}])
     (d/transact! conn
       [{:db/id 100 :a "A" :b "B"}
        {:db/id 200 :a "a" :b "b"}])
@@ -401,9 +442,9 @@
              [200 :b "b"]
              [200 :a+b ["a" "b"]]
              [200 :c "c"]}
-          (tdc/all-datoms (d/db conn))))
+          (some-datoms (d/db conn) [100 200])))
 
-    (is (thrown-msg? "Conflicting upserts: [:a+b [\"A\" \"B\"]] resolves to 1, but [:c \"c\"] resolves to 2"
+    (is (thrown-with-msg? ExceptionInfo #".*Conflicting upserts:.*"
           (d/transact! conn [{:a+b ["A" "B"] :c "c"}])))
 
     ;; change tuple + upsert
@@ -421,4 +462,4 @@
              [200 :b "b"]
              [200 :a+b ["a" "b"]]
              [200 :c "c"]}
-          (tdc/all-datoms (d/db conn))))))
+          (some-datoms (d/db conn) [100 200])))))
