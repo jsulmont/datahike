@@ -4,7 +4,9 @@
       :clj  [clojure.test :as t :refer        [is are deftest testing]])
    [datahike.core :as d]
    [datahike.api :as da]
-   [datahike.db :as db]))
+   [datahike.db :as db])
+  #?(:clj
+      (:import [clojure.lang ExceptionInfo])))
 
 
 
@@ -119,8 +121,10 @@
               @conn)))
       )))
 
-(defn all-datoms [db eid]
-  (into #{} (map (juxt :e :a :v)) (d/datoms db :eavt eid)))
+
+(defn some-datoms
+  [db es]
+  (into #{} (map (juxt :e :a :v)) (mapcat #(d/datoms db :eavt %) es)))
 
 
 (deftest test-tx
@@ -146,7 +150,7 @@
                        :db/valueType :db.type/tuple
                        :db/tupleAttrs [:a :c :d]
                        :db/cardinality :db.cardinality/one}])
-    (are [tx datoms] (= datoms (all-datoms (:db-after (d/transact! conn tx)) e))
+    (are [tx datoms] (= datoms (some-datoms (:db-after (d/transact! conn tx)) [e]))
       [[:db/add e :a "a"]]
       #{[e :a     "a"]
         [e :a+b   ["a" nil]]
@@ -214,7 +218,8 @@
   (let [conn (connect)]
     (d/transact conn [{:db/ident :a
                        :db/valueType :db.type/string
-                       :db/cardinality :db.cardinality/one}
+                       :db/cardinality :db.cardinality/one
+                       :db/unique :db.unique/identity}
                       {:db/ident :b
                        :db/valueType :db.type/string
                        :db/cardinality :db.cardinality/one}
@@ -248,3 +253,172 @@
           (d/q '[:find ?a ?b
                  :where [?e :a+b ?a+b]
                  [(untuple ?a+b) [?a ?b]]] @conn)))))
+
+
+#_(deftest test-lookup-refs
+  (let [conn (d/create-conn {:a+b {:db/tupleAttrs [:a :b]
+                                   :db/unique :db.unique/identity}
+                             :c   {:db/unique :db.unique/identity}})]
+    (d/transact! conn
+      [{:db/id 1 :a "A" :b "B"}
+       {:db/id 2 :a "a" :b "b"}])
+
+    (d/transact! conn [[:db/add [:a+b ["A" "B"]] :c "C"]
+                       {:db/id [:a+b ["a" "b"]] :c "c"}])
+    (is (= #{[1 :a "A"]
+             [1 :b "B"]
+             [1 :a+b ["A" "B"]]
+             [1 :c "C"]
+             [2 :a "a"]
+             [2 :b "b"]
+             [2 :a+b ["a" "b"]]
+             [2 :c "c"]}
+          (all-datoms (d/db conn))))
+
+    (is (thrown-with-msg? ExceptionInfo #"Cannot add .* because of unique constraint: .*"
+          (d/transact! conn [[:db/add [:a+b ["A" "B"]] :c "c"]])))
+
+    (is (thrown-with-msg? ExceptionInfo #"Conflicting upsert: [:c \"c\"] resolves to 2, but entity already has :db/id 1"
+          (d/transact! conn [{:db/id [:a+b ["A" "B"]] :c "c"}])))
+
+    ;; change tuple + upsert
+    (d/transact! conn
+      [{:db/id [:a+b ["A" "B"]]
+        :b "b"
+        :d "D"}])
+
+    (is (= #{[1 :a "A"]
+             [1 :b "b"]
+             [1 :a+b ["A" "b"]]
+             [1 :c "C"]
+             [1 :d "D"]
+             [2 :a "a"]
+             [2 :b "b"]
+             [2 :a+b ["a" "b"]]
+             [2 :c "c"]}
+          (all-datoms (d/db conn))))
+
+    (is (= {:db/id 2
+            :a     "a"
+            :b     "b"
+            :a+b   ["a" "b"]
+            :c     "c"}
+          (d/pull (d/db conn) '[*] [:a+b ["a" "b"]])))))
+
+
+
+(comment
+  (def conn (connect))
+  (d/transact conn [{:db/ident :a
+                     :db/valueType :db.type/string
+                     :db/cardinality :db.cardinality/one}
+                    {:db/ident :b
+                     :db/valueType :db.type/string
+                     :db/cardinality :db.cardinality/one}
+                    {:db/ident :a+b
+                     :db/valueType :db.type/tuple
+                     :db/tupleAttrs [:a :b]
+                     :db/cardinality :db.cardinality/one}])
+
+  (d/transact conn [{:db/id 100 :a "A" :b "B"}
+                      {:db/id 200 :a "A" :b "b"}
+                      {:db/id 300 :a "a" :b "B"}
+                    {:db/id 400 :a "a" :b "b"}])
+
+  (mapcat #(d/datoms @conn :eavt %) [100 200])
+
+
+  )
+
+(deftest test-unique
+  (let [conn (connect)]
+    (d/transact conn [{:db/ident :a
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :b
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :a+b
+                       :db/valueType :db.type/tuple
+                       :db/tupleAttrs [:a :b]
+                       :db/cardinality :db.cardinality/one
+                       :db/unique :db.unique/identity}])
+
+    (d/transact! conn [[:db/add 100 :a "a"]])
+    (d/transact! conn [[:db/add 200 :a "A"]])
+    (is (thrown-with-msg? ExceptionInfo #"Cannot add .* because of unique constraint: .*"
+          (d/transact! conn [[:db/add 100 :a "A"]])))
+
+    (d/transact! conn [[:db/add 100 :b "b"]
+                       [:db/add 200 :b "b"]
+                       {:db/id 300 :a "a" :b "B"}])
+
+    (is (= #{[100 :a "a"]
+             [100 :b "b"]
+             [100 :a+b ["a" "b"]]
+             [200 :a "A"]
+             [200 :b "b"]
+             [200 :a+b ["A" "b"]]
+             [300 :a "a"]
+             [300 :b "B"]
+             [300 :a+b ["a" "B"]]}
+          (some-datoms (d/db conn) [100 200 300])))
+
+    (is (thrown-with-msg? ExceptionInfo #"Cannot add .* because of unique constraint: .*"
+          (d/transact! conn [[:db/add 100 :a "A"]])))
+    (is (thrown-with-msg? ExceptionInfo #"Cannot add .* because of unique constraint: .*"
+          (d/transact! conn [[:db/add 100 :b "B"]])))
+    (is (thrown-with-msg? ExceptionInfo #"Cannot add .* because of unique constraint: .*"
+          (d/transact! conn [[:db/add 100 :a "A"]
+                             [:db/add 100 :b "B"]])))
+
+    (testing "multiple tuple updates"
+      ;; changing both tuple components in a single operation
+      (d/transact! conn [{:db/id 100 :a "A" :b "B"}])
+      (is (= {:db/id 100 :a "A" :b "B" :a+b ["A" "B"]}
+            (d/pull (d/db conn) '[*] 100)))
+
+      ;; adding entity with two tuple components in a single operation
+      (d/transact! conn [{:db/id 4 :a "a" :b "b"}])
+      (is (= {:db/id 4 :a "a" :b "b" :a+b ["a" "b"]}
+            (d/pull (d/db conn) '[*] 4))))))
+
+#_(deftest test-upsert
+  (let [conn (d/create-conn {:a+b {:db/tupleAttrs [:a :b]
+                                   :db/unique :db.unique/identity}
+                             :c   {:db/unique :db.unique/identity}})]
+    (d/transact! conn
+      [{:db/id 100 :a "A" :b "B"}
+       {:db/id 200 :a "a" :b "b"}])
+
+    (d/transact! conn [{:a+b ["A" "B"] :c "C"}
+                       {:a+b ["a" "b"] :c "c"}])
+    (is (= #{[100 :a "A"]
+             [100 :b "B"]
+             [100 :a+b ["A" "B"]]
+             [100 :c "C"]
+             [200 :a "a"]
+             [200 :b "b"]
+             [200 :a+b ["a" "b"]]
+             [200 :c "c"]}
+          (tdc/all-datoms (d/db conn))))
+
+    (is (thrown-msg? "Conflicting upserts: [:a+b [\"A\" \"B\"]] resolves to 1, but [:c \"c\"] resolves to 2"
+          (d/transact! conn [{:a+b ["A" "B"] :c "c"}])))
+
+    ;; change tuple + upsert
+    (d/transact! conn
+      [{:a+b ["A" "B"]
+        :b "b"
+        :d "D"}])
+
+    (is (= #{[100 :a "A"]
+             [100 :b "b"]
+             [100 :a+b ["A" "b"]]
+             [100 :c "C"]
+             [100 :d "D"]
+             [200 :a "a"]
+             [200 :b "b"]
+             [200 :a+b ["a" "b"]]
+             [200 :c "c"]}
+          (tdc/all-datoms (d/db conn))))))
