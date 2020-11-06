@@ -255,30 +255,48 @@
                  [(untuple ?a+b) [?a ?b]]] @conn)))))
 
 
-#_(deftest test-lookup-refs
-  (let [conn (d/create-conn {:a+b {:db/tupleAttrs [:a :b]
-                                   :db/unique :db.unique/identity}
-                             :c   {:db/unique :db.unique/identity}})]
+(deftest test-lookup-refs
+  (let [conn (connect)]
+    (d/transact conn [{:db/ident :a
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :b
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident :c
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one
+                       :db/unique :db.unique/identity}
+                      {:db/ident :d
+                       :db/valueType :db.type/string
+                       :db/cardinality :db.cardinality/one
+                       :db/unique :db.unique/identity}
+                      {:db/ident :a+b
+                       :db/valueType :db.type/tuple
+                       :db/tupleAttrs [:a :b]
+                       :db/cardinality :db.cardinality/one
+                       :db/unique :db.unique/identity}])
+
     (d/transact! conn
-      [{:db/id 1 :a "A" :b "B"}
-       {:db/id 2 :a "a" :b "b"}])
+      [{:db/id 100 :a "A" :b "B"}
+       {:db/id 200 :a "a" :b "b"}])
 
     (d/transact! conn [[:db/add [:a+b ["A" "B"]] :c "C"]
                        {:db/id [:a+b ["a" "b"]] :c "c"}])
-    (is (= #{[1 :a "A"]
-             [1 :b "B"]
-             [1 :a+b ["A" "B"]]
-             [1 :c "C"]
-             [2 :a "a"]
-             [2 :b "b"]
-             [2 :a+b ["a" "b"]]
-             [2 :c "c"]}
-          (all-datoms (d/db conn))))
+    (is (= #{[100 :a "A"]
+             [100 :b "B"]
+             [100 :a+b ["A" "B"]]
+             [100 :c "C"]
+             [200 :a "a"]
+             [200 :b "b"]
+             [200 :a+b ["a" "b"]]
+             [200 :c "c"]}
+          (some-datoms (d/db conn) [100 200])))
 
     (is (thrown-with-msg? ExceptionInfo #"Cannot add .* because of unique constraint: .*"
           (d/transact! conn [[:db/add [:a+b ["A" "B"]] :c "c"]])))
 
-    (is (thrown-with-msg? ExceptionInfo #"Conflicting upsert: [:c \"c\"] resolves to 2, but entity already has :db/id 1"
+    (is (thrown-with-msg? ExceptionInfo #".*Conflicting upsert: \[\:c \"c\"] .*"
           (d/transact! conn [{:db/id [:a+b ["A" "B"]] :c "c"}])))
 
     ;; change tuple + upsert
@@ -287,18 +305,18 @@
         :b "b"
         :d "D"}])
 
-    (is (= #{[1 :a "A"]
-             [1 :b "b"]
-             [1 :a+b ["A" "b"]]
-             [1 :c "C"]
-             [1 :d "D"]
-             [2 :a "a"]
-             [2 :b "b"]
-             [2 :a+b ["a" "b"]]
-             [2 :c "c"]}
-          (all-datoms (d/db conn))))
+    (is (= #{[100 :a "A"]
+             [100 :b "b"]
+             [100 :a+b ["A" "b"]]
+             [100 :c "C"]
+             [100 :d "D"]
+             [200 :a "a"]
+             [200 :b "b"]
+             [200 :a+b ["a" "b"]]
+             [200 :c "c"]}
+          (some-datoms (d/db conn) [100 200])))
 
-    (is (= {:db/id 2
+    (is (= {:db/id 200
             :a     "a"
             :b     "b"
             :a+b   ["a" "b"]
@@ -357,30 +375,6 @@
       (d/transact! conn [{:db/id 4 :a "a" :b "b"}])
       (is (= {:db/id 4 :a "a" :b "b" :a+b ["a" "b"]}
             (d/pull (d/db conn) '[*] 4))))))
-
-
-(comment
-  (def conn (connect))
-  (d/transact conn [{:db/ident :a
-                     :db/valueType :db.type/string
-                     :db/cardinality :db.cardinality/one}
-                    {:db/ident :b
-                     :db/valueType :db.type/string
-                     :db/cardinality :db.cardinality/one}
-                    {:db/ident :a+b
-                     :db/valueType :db.type/tuple
-                     :db/tupleAttrs [:a :b]
-                     :db/cardinality :db.cardinality/one}])
-
-  (d/transact conn [{:db/id 100 :a "A" :b "B"}
-                      {:db/id 200 :a "A" :b "b"}
-                      {:db/id 300 :a "a" :b "B"}
-                    {:db/id 400 :a "a" :b "b"}])
-
-  (mapcat #(d/datoms @conn :eavt %) [100 200])
-
-  )
-
 
 (deftest test-upsert
   (let [conn (connect)]
