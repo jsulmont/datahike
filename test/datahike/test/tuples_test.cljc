@@ -432,3 +432,42 @@
              [200 :a+b ["a" "b"]]
              [200 :c "c"]}
           (some-datoms (d/db conn) [100 200])))))
+
+
+(deftest test-validation
+  (let [db (d/empty-db {:a+b {:db/valueType :db.type/tuple
+                              :db/tupleAttrs [:a :b]}})
+        ;; TODO: when used as the line below, the system does not throw any error!?
+        ;;db (d/empty-db {:a+b {:db/tupleAttrs [:a :b]}})
+        db1 (d/db-with db [[:db/add 100 :a "a"]])]
+    (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
+          (d/db-with db [[:db/add 100 :a+b [nil nil]]])))
+    (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
+          (d/db-with db1 [[:db/add 100 :a+b ["a" nil]]])))
+    (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
+          (d/db-with db [[:db/add 100 :a "a"]
+                         [:db/add 100 :a+b ["a" nil]]])))
+    (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
+          (d/db-with db1 [[:db/retract 100 :a+b ["a" nil]]])))))
+
+(deftest test-indexes
+  (let [db (-> (d/empty-db {:a+b+c {:db/tupleAttrs [:a :b :c]
+                                    :db/valueType :db.type/tuple
+                                    :db/index true}})
+             (d/db-with
+               [{:db/id 1 :a "a" :b "b" :c "c"}
+                {:db/id 2 :a "A" :b "b" :c "c"}
+                {:db/id 3 :a "a" :b "B" :c "c"}
+                {:db/id 4 :a "A" :b "B" :c "c"}
+                {:db/id 5 :a "a" :b "b" :c "C"}
+                {:db/id 6 :a "A" :b "b" :c "C"}
+                {:db/id 7 :a "a" :b "B" :c "C"}
+                {:db/id 8 :a "A" :b "B" :c "C"}]))]
+    (is (= [6]
+          (mapv :e (d/datoms db :avet :a+b+c ["A" "b" "C"]))))
+    (is (= []
+          (mapv :e (d/datoms db :avet :a+b+c ["A" "b" nil]))))
+    (is (= [8 4 6 2]
+          (mapv :e (d/index-range db :a+b+c ["A" "B" "C"] ["A" "b" "c"]))))
+    (is (= [8 4]
+          (mapv :e (d/index-range db :a+b+c ["A" "B" nil] ["A" "b" nil]))))))
