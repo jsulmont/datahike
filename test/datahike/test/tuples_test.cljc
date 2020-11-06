@@ -209,9 +209,8 @@
         [e :a+c+d [nil "C" "D"]]}
       )
 
-    ;; TODO: Fix this test
-    #_(is (thrown-msg? "Can’t modify tuple attrs directly: [:db/add 1 :a+b [\"A\" \"B\"]]"
-          (d/transact! conn [{:db/id 1 :a+b ["A" "B"]}])))))
+    (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
+          (d/transact! conn [{:db/id 100 :a+b ["A" "B"]}])))))
 
 
 (deftest test-queries
