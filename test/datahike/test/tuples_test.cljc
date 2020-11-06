@@ -127,7 +127,7 @@
   (into #{} (map (juxt :e :a :v)) (mapcat #(d/datoms db :eavt %) es)))
 
 
-(deftest test-tx
+(deftest test-more-transaction
   (let [conn (connect)
         e    100]
     (d/transact conn [{:db/ident :a
