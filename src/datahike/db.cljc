@@ -1004,6 +1004,10 @@
           :cljs [^boolean tuple-source?]) [db attr]
   (is-attr? db attr :db/attrTuples))
 
+(defn #?@(:clj  [^Boolean tuple?]
+          :cljs [^boolean tuple?]) [db attr]
+  (is-attr? db attr :db.type/tuple))
+
 (defn entid [db eid]
   {:pre [(db? db)]}
   (cond
@@ -1471,9 +1475,7 @@
     :db.history.purge/before})
 
 (defn flush-tuples [report]
-  (let [db          (:db-after report)
-        schema      (-schema db)
-        attr-tuples (-attrs-by db :db/attrTuples)]
+  (let [db (:db-after report)]
     (reduce-kv
       (fn [entities eid tuples+values]
         (reduce-kv
@@ -1482,6 +1484,7 @@
                   current (:v (first (-datoms db :eavt [eid tuple])))]
               (cond
                 (= value current) entities
+                ;; adds ::internal to meta-data to mean that these datoms were generated internally.
                 (nil? value)      (conj entities ^::internal [:db/retract eid tuple current])
                 :else             (conj entities ^::internal [:db/add eid tuple value]))))
           entities
@@ -1657,6 +1660,11 @@
               (if-let [vid (get tempids v)]
                 (recur report (cons [op e a vid] entities))
                 (recur (allocate-eid report v (next-eid db)) es))
+
+              (and (not (::internal (meta entity)))
+                (tuple? db a))
+              (raise "Can’t modify tuple attrs directly: " entity
+                {:error :transact/syntax, :tx-data entity})
 
               (= op :db/add)
               (recur (transact-add report entity) entities)
