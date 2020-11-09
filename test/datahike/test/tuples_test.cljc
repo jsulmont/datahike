@@ -37,7 +37,7 @@
                              :db/valueType   :db.type/tuple
                              :db/tupleType   :db.type/keyword
                              :db/cardinality :db.cardinality/one}]))
-      (d/transact conn [{:db/reg [:reg/course :reg/semester :reg/student]}])))
+      (is (d/transact conn [{:db/reg [:reg/course :reg/semester :reg/student]}]))))
 
   (testing "heterogeneous tuple"
     (let [conn (connect)]
@@ -45,7 +45,7 @@
                          :db/valueType   :db.type/tuple
                          :db/tupleTypes  [:db.type/long :db.type/keyword]
                          :db/cardinality :db.cardinality/one}])
-      (d/transact conn [{:db/coord [100 :coord/west]}])))
+      (is (d/transact conn [{:db/coord [100 :coord/west]}]))))
 
   (testing "composite tuple"
     (let [conn (connect)
