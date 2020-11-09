@@ -10,7 +10,8 @@
    [datahike.tools :refer [get-time case-tree raise]]
    [datahike.schema :as ds]
    [me.tonsky.persistent-sorted-set.arrays :as arrays]
-   [datahike.config :as dc])
+   [datahike.config :as dc]
+   [clojure.spec.alpha :as s])
   #?(:cljs (:require-macros [datahike.db :refer [defrecord-updatable cond+]]
                             [datahike.datom :refer [combine-cmp]]
                             [datahike.tools :refer [case-tree raise]]))
@@ -1699,6 +1700,10 @@
               (raise (str "Cannot store heterogeneous tuple: expecting " (count (-> db -schema a :db/tupleTypes)) " values, got " (count v))
                 {:error :transact/syntax, :tx-data entity})
 
+              (and (heterogeneous-tuple-attr? db a)
+                (not (apply = (map s/valid? (-> db -schema a :db/tupleTypes) v))))
+              (raise (str "Cannot store heterogeneous tuple: there is a mismatch between values " v " and their types " (-> db -schema a :db/tupleTypes))
+                {:error :transact/syntax, :tx-data entity})
 
               (and (not (::internal (meta entity)))
                 (composite-tuple-attr? db a))

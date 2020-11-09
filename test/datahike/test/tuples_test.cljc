@@ -55,7 +55,9 @@
                          :db/cardinality :db.cardinality/one}])
       (is (d/transact conn [{:db/coord [100 :coord/west]}]))
       (is (thrown-with-msg? ExceptionInfo #".*Cannot store heterogeneous tuple: expecting 2 values, got 3.*"
-            (d/transact! conn [{:db/coord [100 :coord/west 9]}])))))
+            (d/transact! conn [{:db/coord [100 :coord/west 9]}])))
+      (is (thrown-with-msg? ExceptionInfo #".*Cannot store heterogeneous tuple: there is a mismatch between values.* and their types.*"
+            (d/transact! conn [{:db/coord [100 9]}])))))
 
 
   (testing "composite tuple"
