@@ -372,15 +372,16 @@
 (deftest test-validation
   (let [db (d/empty-db {:a+b {:db/valueType :db.type/tuple
                            :db/tupleAttrs [:a :b]}})
-        db1 (d/db-with db [[:db/add 100 :a "a"]])]
-    (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
+        db1 (d/db-with db [[:db/add 100 :a "a"]])
+        err-msg #"Can’t modify tuple attrs directly:.*"]
+    (is (thrown-with-msg? ExceptionInfo err-msg
           (d/db-with db [[:db/add 100 :a+b [nil nil]]])))
-    (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
+    (is (thrown-with-msg? ExceptionInfo err-msg
           (d/db-with db1 [[:db/add 100 :a+b ["a" nil]]])))
-    (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
+    (is (thrown-with-msg? ExceptionInfo err-msg
           (d/db-with db [[:db/add 100 :a "a"]
                          [:db/add 100 :a+b ["a" nil]]])))
-    (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
+    (is (thrown-with-msg? ExceptionInfo err-msg
           (d/db-with db1 [[:db/retract 100 :a+b ["a" nil]]])))))
 
 (deftest test-indexes
