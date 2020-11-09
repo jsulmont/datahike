@@ -98,7 +98,7 @@
               @conn))))))
 
 
-(deftest test-transacting-composite
+(deftest test-transact-and-query-composite
   (let [conn (connect)]
     (d/transact conn [{:db/ident       :a
                        :db/valueType   :db.type/long
