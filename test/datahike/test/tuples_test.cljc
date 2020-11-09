@@ -228,15 +228,13 @@
                       {:db/id 3 :a "a" :b "B"}
                       {:db/id 4 :a "a" :b "b"}])
 
-    ;; TODO: fix this test
-    #_(is (= #{[3]}
+    (is (= #{[3]}
           (d/q '[:find ?e
                  :where [?e :a+b ["a" "B"]]] @conn)))
 
-    ;; TODO: fix this test
-    ;; (is (= #{[["a" "B"]]}
-    ;;       (d/q '[:find ?a+b
-    ;;              :where [[:a+b ["a" "B"]] :a+b ?a+b]] db)))
+    (is (= #{[["a" "B"]]}
+          (d/q '[:find ?a+b
+                 :where [[:a+b ["a" "B"]] :a+b ?a+b]] @conn)))
 
     (is (= #{[["A" "B"]] [["A" "b"]] [["a" "B"]] [["a" "b"]]}
           (d/q '[:find ?a+b
