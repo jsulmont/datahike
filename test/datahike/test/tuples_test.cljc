@@ -371,9 +371,7 @@
 
 (deftest test-validation
   (let [db (d/empty-db {:a+b {:db/valueType :db.type/tuple
-                              :db/tupleAttrs [:a :b]}})
-        ;; TODO: when used as the line below, the system does not throw any error!?
-        ;;db (d/empty-db {:a+b {:db/tupleAttrs [:a :b]}})
+                           :db/tupleAttrs [:a :b]}})
         db1 (d/db-with db [[:db/add 100 :a "a"]])]
     (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
           (d/db-with db [[:db/add 100 :a+b [nil nil]]])))
