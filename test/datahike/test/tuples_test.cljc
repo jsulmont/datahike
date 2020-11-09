@@ -41,7 +41,10 @@
         (is (d/transact conn [{:db/prices [1 2 3 4 5 6 7 8]}]))
         (testing "are of different types"
           (is (thrown-with-msg? ExceptionInfo #".*Cannot store homogeneous tuple with values of different type.*"
-                (d/transact! conn [{:db/prices [1 2 3 4 5 6 "fdsfdsf"]}])))))
+                (d/transact! conn [{:db/prices [1 2 3 4 5 6 "fdsfdsf"]}]))))
+        (testing "are of wrong type"
+          (is (thrown-with-msg? ExceptionInfo #".*Cannot store homogeneous tuple. Values are of wrong type.*"
+                (d/transact! conn [{:db/prices ["a" "b" "fdsfdsf"]}])))))
       (testing "of more than 8 values"
         (is (thrown-with-msg? ExceptionInfo #".*Cannot store more than 8 values .*"
               (d/transact! conn [{:db/prices [1 2 3 4 5 6 7 8 9]}]))))))

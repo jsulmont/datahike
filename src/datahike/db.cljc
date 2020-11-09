@@ -1695,6 +1695,11 @@
               (raise "Cannot store homogeneous tuple with values of different type: " entity
                 {:error :transact/syntax, :tx-data entity})
 
+              (and (homogeneous-tuple-attr? db a)
+                (not (s/valid? (-> db -schema a :db/tupleType) (first v))))
+              (raise "Cannot store homogeneous tuple. Values are of wrong type: " entity
+                {:error :transact/syntax, :tx-data entity})
+
               (and (heterogeneous-tuple-attr? db a)
                 (not (= (count v) (count (-> db -schema a :db/tupleTypes)))))
               (raise (str "Cannot store heterogeneous tuple: expecting " (count (-> db -schema a :db/tupleTypes)) " values, got " (count v))
