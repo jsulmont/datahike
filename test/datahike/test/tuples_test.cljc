@@ -64,12 +64,12 @@
                              :db/valueType   :db.type/tuple
                              :db/tupleAttrs  [:reg/course :reg/semester :reg/student]
                              :db/cardinality :db.cardinality/one}]))
-      (d/transact conn [{:reg/course   "BIO-101"
-                         :reg/semester "2018-fall"
-                         :reg/student  "johndoe@university.edu"}]))))
+      (is (d/transact conn [{:reg/course   "BIO-101"
+                             :reg/semester "2018-fall"
+                             :reg/student  "johndoe@university.edu"}])))))
 
 
-(deftest test-transacting-non-composite
+(deftest test-transact-and-query-non-composite
   (testing "heterogeneous"
     (let [conn (connect)]
       (d/transact conn [{:db/ident       :db/coord
