@@ -31,7 +31,6 @@
   (da/connect))
 
 (deftest test-transaction
-  ;; TODO: how to ensure that there are only 2 to 8 elements in the vector?
   (testing "homogeneous tuple"
     (let [conn (connect)]
       (is (d/transact conn [{:db/ident       :db/reg
