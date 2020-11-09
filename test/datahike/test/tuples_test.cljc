@@ -26,7 +26,7 @@
 
 (defn connect
   []
-  (da/delete-database)
+  (da/delete-database) ;; deletes the 'default' db
   (da/create-database {:schema-flexibility :write})
   (da/connect))
 
@@ -220,7 +220,8 @@
                       {:db/ident :a+b
                        :db/valueType :db.type/tuple
                        :db/tupleAttrs [:a :b]
-                       :db/cardinality :db.cardinality/one}])
+                       :db/cardinality :db.cardinality/one
+                       :db/unique :db.unique/value}])
 
     (d/transact conn [{:db/id 1 :a "A" :b "B"}
                       {:db/id 2 :a "A" :b "b"}
