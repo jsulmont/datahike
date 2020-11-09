@@ -69,7 +69,7 @@
                          :reg/student  "johndoe@university.edu"}]))))
 
 
-(deftest test-transacting
+(deftest test-transacting-non-composite
   (testing "heterogeneous"
     (let [conn (connect)]
       (d/transact conn [{:db/ident       :db/coord
