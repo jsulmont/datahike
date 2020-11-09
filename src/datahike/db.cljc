@@ -1009,7 +1009,7 @@
   (is-attr? db attr :db.type/tuple))
 
 (defn #?@(:clj  [^Boolean composite-tuple-attr?]
-          :cljs [^boolean tuple?])
+          :cljs [^boolean composite-tuple-attr?])
   "Returns true if 'attr' is a composite tuple attribute."
   [db attr]
   (and (tuple? db attr)
