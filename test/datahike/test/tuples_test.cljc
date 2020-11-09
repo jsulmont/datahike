@@ -95,31 +95,27 @@
 
 
 (deftest test-transacting-composite
-  (testing ""
-    (let [conn (connect)]
-      (d/transact conn [{:db/ident       :a
-                         :db/valueType   :db.type/long
-                         :db/cardinality :db.cardinality/one}
-                        ;; {:db/ident       :test/b}
-                        {:db/ident       :a+b+c
-                         :db/valueType   :db.type/tuple
-                         :db/tupleAttrs  [:a :b :c]
-                         :db/cardinality :db.cardinality/one}])
-      (is (d/transact conn [[:db/add 100 :a 123]]))
-      (is (= #{[123]}
-            (d/q '[:find ?v
-                   :where [100 :a ?v]]
-              @conn)))
-      (is (= #{[100 [123 nil nil]]}
-            (d/q '[:find ?e ?v
-                   :where [?e :a+b+c ?v]]
-              @conn)))
-      ;; TODO: weird, when we specify the 'e' it does not work where the previous query shows that it should work.
-      #_(is (= #{[[123 nil nil]]}
-            (d/q '[:find ?v
-                   :where [100 :a+b+c ?v]]
-              @conn)))
-      )))
+  (let [conn (connect)]
+    (d/transact conn [{:db/ident       :a
+                       :db/valueType   :db.type/long
+                       :db/cardinality :db.cardinality/one}
+                      {:db/ident       :a+b+c
+                       :db/valueType   :db.type/tuple
+                       :db/tupleAttrs  [:a :b :c]
+                       :db/cardinality :db.cardinality/one}])
+    (is (d/transact conn [[:db/add 100 :a 123]]))
+    (is (= #{[123]}
+          (d/q '[:find ?v
+                 :where [100 :a ?v]]
+            @conn)))
+    (is (= #{[100 [123 nil nil]]}
+          (d/q '[:find ?e ?v
+                 :where [?e :a+b+c ?v]]
+            @conn)))
+    (is (= #{[[123 nil nil]]}
+          (d/q '[:find ?v
+                 :where [100 :a+b+c ?v]]
+            @conn)))))
 
 
 (defn some-datoms
