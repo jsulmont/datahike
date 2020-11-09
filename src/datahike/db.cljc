@@ -1008,6 +1008,13 @@
           :cljs [^boolean tuple?]) [db attr]
   (is-attr? db attr :db.type/tuple))
 
+(defn #?@(:clj  [^Boolean composite-tuple-attr?]
+          :cljs [^boolean tuple?])
+  "Returns true if 'attr' is a composite tuple attribute."
+  [db attr]
+  (and (tuple? db attr)
+    (-> db -schema attr :db/tupleAttrs)))
+
 (defn entid [db eid]
   {:pre [(db? db)]}
   (cond
@@ -1702,7 +1709,7 @@
                 (recur (allocate-eid report v (next-eid db)) es))
 
               (and (not (::internal (meta entity)))
-                (tuple? db a))
+                (composite-tuple-attr? db a))
               (raise "Can’t modify tuple attrs directly: " entity
                 {:error :transact/syntax, :tx-data entity})
 
