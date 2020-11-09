@@ -374,64 +374,6 @@
       (is (= {:db/id 4 :a "a" :b "b" :a+b ["a" "b"]}
             (d/pull (d/db conn) '[*] 4))))))
 
-(deftest test-upsert
-  (let [conn (connect)]
-    (d/transact conn [{:db/ident :a
-                       :db/valueType :db.type/string
-                       :db/cardinality :db.cardinality/one}
-                      {:db/ident :b
-                       :db/valueType :db.type/string
-                       :db/cardinality :db.cardinality/one}
-                      {:db/ident :c
-                       :db/valueType :db.type/string
-                       :db/cardinality :db.cardinality/one
-                       :db/unique :db.unique/identity}
-                      {:db/ident :d
-                       :db/valueType :db.type/string
-                       :db/cardinality :db.cardinality/one
-                       :db/unique :db.unique/identity}
-                      {:db/ident :a+b
-                       :db/valueType :db.type/tuple
-                       :db/tupleAttrs [:a :b]
-                       :db/cardinality :db.cardinality/one
-                       :db/unique :db.unique/identity}])
-    (d/transact! conn
-      [{:db/id 100 :a "A" :b "B"}
-       {:db/id 200 :a "a" :b "b"}])
-
-    (d/transact! conn [{:a+b ["A" "B"] :c "C"}
-                       {:a+b ["a" "b"] :c "c"}])
-    (is (= #{[100 :a "A"]
-             [100 :b "B"]
-             [100 :a+b ["A" "B"]]
-             [100 :c "C"]
-             [200 :a "a"]
-             [200 :b "b"]
-             [200 :a+b ["a" "b"]]
-             [200 :c "c"]}
-          (some-datoms (d/db conn) [100 200])))
-
-    (is (thrown-with-msg? ExceptionInfo #".*Conflicting upserts:.*"
-          (d/transact! conn [{:a+b ["A" "B"] :c "c"}])))
-
-    ;; change tuple + upsert
-    (d/transact! conn
-      [{:a+b ["A" "B"]
-        :b "b"
-        :d "D"}])
-
-    (is (= #{[100 :a "A"]
-             [100 :b "b"]
-             [100 :a+b ["A" "b"]]
-             [100 :c "C"]
-             [100 :d "D"]
-             [200 :a "a"]
-             [200 :b "b"]
-             [200 :a+b ["a" "b"]]
-             [200 :c "c"]}
-          (some-datoms (d/db conn) [100 200])))))
-
-
 (deftest test-validation
   (let [db (d/empty-db {:a+b {:db/valueType :db.type/tuple
                               :db/tupleAttrs [:a :b]}})
