@@ -1010,7 +1010,8 @@
 
 (defn #?@(:clj  [^Boolean tuple?]
           :cljs [^boolean tuple?])
-  "Returns true if 'attr' is a tuple attribute."
+  "Returns true if 'attr' is a tuple attribute.
+   I.e., if 'attr' value is of type ':db.type/tuple'"
   [db attr]
   (is-attr? db attr :db.type/tuple))
 
@@ -1479,7 +1480,10 @@
     :db.purge/attribute
     :db.history.purge/before})
 
-(defn flush-tuples [report]
+(defn flush-tuples
+  "Generates all the add or retract operations needed for updating the states of composite tuples.
+  I.e., creates a set of such vectors: [:db/add 100 :a+b+c [123 nil nil]]"
+  [report]
   (let [db (:db-after report)]
     (reduce-kv
       (fn [entities eid tuples+values]
