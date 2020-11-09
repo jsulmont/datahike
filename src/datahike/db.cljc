@@ -1001,11 +1001,17 @@
   (is-attr? db attr :db/noHistory))
 
 (defn #?@(:clj  [^Boolean tuple-source?]
-          :cljs [^boolean tuple-source?]) [db attr]
+          :cljs [^boolean tuple-source?])
+  "Returns true if 'attr' is an attribute basis of a tuple attribute.
+   E.g. :a is an attribute part of the tuple attribute :a+b.
+   (tuple-source? :a) returns true."
+  [db attr]
   (is-attr? db attr :db/attrTuples))
 
 (defn #?@(:clj  [^Boolean tuple?]
-          :cljs [^boolean tuple?]) [db attr]
+          :cljs [^boolean tuple?])
+  "Returns true if 'attr' is a tuple attribute."
+  [db attr]
   (is-attr? db attr :db.type/tuple))
 
 (defn #?@(:clj  [^Boolean composite-tuple-attr?]
