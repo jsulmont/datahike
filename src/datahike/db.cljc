@@ -1115,7 +1115,7 @@
 
 (defn- validate-attr [attr at db]
   (if (= :read (get-in db [:config :schema-flexibility]))
-    (when-not (or (keyword? attr) (string? attr) (vector? attr))
+    (when-not (or (keyword? attr) (string? attr))
       (raise "Bad entity attribute " attr " at " at ", expected keyword or string"
              {:error :transact/syntax, :attribute attr, :context at}))
     (when-not (or (ds/meta-attr? attr) (ds/schema-attr? attr) (ds/entity-spec-attr? attr))
