@@ -1015,6 +1015,13 @@
   [db attr]
   (is-attr? db attr :db.type/tuple))
 
+(defn #?@(:clj  [^Boolean homogeneous-tuple-attr?]
+          :cljs [^boolean homogeneous-tuple-attr?])
+  "Returns true if 'attr' is a homogeneous tuple attribute."
+  [db attr]
+  (and (tuple? db attr)
+    (-> db -schema attr :db/tupleType)))
+
 (defn #?@(:clj  [^Boolean composite-tuple-attr?]
           :cljs [^boolean composite-tuple-attr?])
   "Returns true if 'attr' is a composite tuple attribute."
@@ -1669,6 +1676,11 @@
               (if-let [vid (get tempids v)]
                 (recur report (cons [op e a vid] entities))
                 (recur (allocate-eid report v (next-eid db)) es))
+
+              (and (homogeneous-tuple-attr? db a)
+                (> (count v) 8))
+              (raise "Cannot store more than 8 values for homogeneous tuple: " entity
+                {:error :transact/syntax, :tx-data entity})
 
               (and (not (::internal (meta entity)))
                 (composite-tuple-attr? db a))
