@@ -217,8 +217,7 @@
   (let [conn (connect)]
     (d/transact conn [{:db/ident :a
                        :db/valueType :db.type/string
-                       :db/cardinality :db.cardinality/one
-                       :db/unique :db.unique/identity}
+                       :db/cardinality :db.cardinality/one}
                       {:db/ident :b
                        :db/valueType :db.type/string
                        :db/cardinality :db.cardinality/one}
