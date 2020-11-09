@@ -1070,10 +1070,6 @@
     (string? attr)
     (boolean (re-matches #"(?:([^/]+)/)?_([^/]+)" attr))
 
-    ;; TODO TODO: what are we supposed to do here
-    (vector? attr)
-    attr
-
     :else
     (raise "Bad attribute type: " attr ", expected keyword or string"
            {:error :transact/syntax, :attribute attr})))
@@ -1090,10 +1086,6 @@
       (if (= \_ (nth name 0))
         (if ns (str ns "/" (subs name 1)) (subs name 1))
         (if ns (str ns "/_" name) (str "_" name))))
-
-    ;; TODO TODO: what are we supposed to do here
-    (vector? attr)
-    attr
 
     :else
     (raise "Bad attribute type: " attr ", expected keyword or string"
