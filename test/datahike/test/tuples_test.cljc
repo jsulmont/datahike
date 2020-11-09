@@ -37,7 +37,15 @@
                              :db/valueType   :db.type/tuple
                              :db/tupleType   :db.type/keyword
                              :db/cardinality :db.cardinality/one}]))
-      (is (d/transact conn [{:db/reg [:reg/course :reg/semester :reg/student]}]))))
+      (is (d/transact conn [{:db/reg [:reg/course :reg/semester :reg/student]}])))
+    (testing "multiple values"
+      (let [conn (connect)]
+        (d/transact conn [{:db/ident       :db/prices
+                           :db/valueType   :db.type/tuple
+                           :db/tupleType   :db.type/number
+                           :db/cardinality :db.cardinality/one}])
+        (is (d/transact conn [{:db/prices [1 2 3 4 5 6 7 8 9]}])))))
+
 
   (testing "heterogeneous tuple"
     (let [conn (connect)]
