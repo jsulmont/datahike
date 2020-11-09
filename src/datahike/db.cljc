@@ -1482,7 +1482,7 @@
 
 (defn flush-tuples
   "Generates all the add or retract operations needed for updating the states of composite tuples.
-  I.e., creates a set of such vectors: [:db/add 100 :a+b+c [123 nil nil]]"
+  E.g., if '::queued-tuples' contains {100 {:a+b+c [123 nil nil]}}, this function creates this vector [:db/add 100 :a+b+c [123 nil nil]]"
   [report]
   (let [db (:db-after report)]
     (reduce-kv
