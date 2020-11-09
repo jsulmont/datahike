@@ -123,7 +123,7 @@
   (into #{} (map (juxt :e :a :v)) (mapcat #(d/datoms db :eavt %) es)))
 
 
-(deftest test-more-transaction
+(deftest test-more-composite-transaction
   (let [conn (connect)
         e    100]
     (d/transact conn [{:db/ident :a
@@ -202,8 +202,7 @@
       [[:db/retract e :b "B"]]
       #{[e :c     "C"]
         [e :d     "D"]
-        [e :a+c+d [nil "C" "D"]]}
-      )
+        [e :a+c+d [nil "C" "D"]]})
 
     (is (thrown-with-msg? ExceptionInfo #"Can’t modify tuple attrs directly:.*"
           (d/transact! conn [{:db/id 100 :a+b ["A" "B"]}])))))
