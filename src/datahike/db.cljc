@@ -1022,6 +1022,13 @@
   (and (tuple? db attr)
     (-> db -schema attr :db/tupleType)))
 
+(defn #?@(:clj  [^Boolean heterogeneous-tuple-attr?]
+          :cljs [^boolean heterogeneous-tuple-attr?])
+  "Returns true if 'attr' is an heterogeneous tuple attribute."
+  [db attr]
+  (and (tuple? db attr)
+    (-> db -schema attr :db/tupleTypes)))
+
 (defn #?@(:clj  [^Boolean composite-tuple-attr?]
           :cljs [^boolean composite-tuple-attr?])
   "Returns true if 'attr' is a composite tuple attribute."
@@ -1686,6 +1693,12 @@
                 (not (apply = (map type v))))
               (raise "Cannot store homogeneous tuple with values of different type: " entity
                 {:error :transact/syntax, :tx-data entity})
+
+              (and (heterogeneous-tuple-attr? db a)
+                (not (= (count v) (count (-> db -schema a :db/tupleTypes)))))
+              (raise (str "Cannot store heterogeneous tuple: expecting " (count (-> db -schema a :db/tupleTypes)) " values, got " (count v))
+                {:error :transact/syntax, :tx-data entity})
+
 
               (and (not (::internal (meta entity)))
                 (composite-tuple-attr? db a))
