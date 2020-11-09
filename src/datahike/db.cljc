@@ -1274,46 +1274,6 @@
       history? (update-in [:temporal-aevt] #(di/-remove % history-datom :aevt))
       (and history? indexing?) (update-in [:temporal-avet] #(di/-remove % history-datom :avet)))))
 
-(comment
-  (do
-    (defn connect
-      []
-      (datahike.api/delete-database)
-      (datahike.api/create-database {:schema-flexibility :write})
-      (datahike.api/connect))
-
-    (def conn (connect))
-    (def schema [{:db/ident :a
-                  :db/valueType :db.type/string
-                  :db/cardinality :db.cardinality/one}
-                 {:db/ident :b
-                  :db/valueType :db.type/string
-                  :db/cardinality :db.cardinality/one}
-                 {:db/ident :c
-                  :db/valueType :db.type/string
-                  :db/cardinality :db.cardinality/one}
-                 {:db/ident :d
-                  :db/valueType :db.type/string
-                  :db/cardinality :db.cardinality/one}
-                 {:db/ident :a+b
-                  :db/valueType :db.type/tuple
-                  :db/tupleAttrs [:a :b]
-                  :db/cardinality :db.cardinality/one}
-                 {:db/ident :a+c+d
-                  :db/valueType :db.type/tuple
-                  :db/tupleAttrs [:a :c :d]
-                  :db/cardinality :db.cardinality/one}])
-    (datahike.api/transact conn schema)
-    (datahike.api/transact conn [[:db/add 100 :a "a"]]))
-
-
-  (datahike.core/datoms @conn :eavt 100)
-
-  (-datoms @conn :eavt [100 :a+b])
-  )
-
-
-
 (defn- queue-tuple [queue tuple idx db e v]
   (let [tuple-value  (or (get queue tuple)
                        (:v (first (-datoms db :eavt [e tuple])))
