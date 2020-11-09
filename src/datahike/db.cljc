@@ -1682,6 +1682,11 @@
               (raise "Cannot store more than 8 values for homogeneous tuple: " entity
                 {:error :transact/syntax, :tx-data entity})
 
+              (and (homogeneous-tuple-attr? db a)
+                (not (apply = (map type v))))
+              (raise "Cannot store homogeneous tuple with values of different type: " entity
+                {:error :transact/syntax, :tx-data entity})
+
               (and (not (::internal (meta entity)))
                 (composite-tuple-attr? db a))
               (raise "Can’t modify tuple attrs directly: " entity

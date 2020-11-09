@@ -37,8 +37,11 @@
                          :db/valueType   :db.type/tuple
                          :db/tupleType   :db.type/number
                          :db/cardinality :db.cardinality/one}])
-      (testing "less that 9 values"
-        (is (d/transact conn [{:db/prices [1 2 3 4 5 6 7 8]}])))
+      (testing "of less than 9 values"
+        (is (d/transact conn [{:db/prices [1 2 3 4 5 6 7 8]}]))
+        (testing "are of the same type"
+          (is (thrown-with-msg? ExceptionInfo #".*Cannot store homogeneous tuple with values of different type.*"
+                (d/transact! conn [{:db/prices [1 2 3 4 5 6 "fdsfdsf"]}])))))
       (testing "more than 8 values"
         (is (thrown-with-msg? ExceptionInfo #".*Cannot store more than 8 values .*"
               (d/transact! conn [{:db/prices [1 2 3 4 5 6 7 8 9]}]))))))
