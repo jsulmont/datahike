@@ -693,20 +693,18 @@
           :db/noHistory [:db/noHistory]
           [])))))
 
-
 (defn reduce-indexed
   "Same as reduce, but `f` takes [acc el idx]"
   [f init xs]
   (first
-    (reduce
-      (fn [[acc idx] x]
-        (let [res (f acc x idx)]
-          (if (reduced? res)
-            (reduced [res idx])
-            [res (inc idx)])))
-      [init 0]
-      xs)))
-
+   (reduce
+    (fn [[acc idx] x]
+      (let [res (f acc x idx)]
+        (if (reduced? res)
+          (reduced [res idx])
+          [res (inc idx)])))
+    [init 0]
+    xs)))
 
 (defn- attrTuples
   "For each attribute involved in a composite tuple, returns a map made of the tuple attribute it is involved in, plus its position in the tuple.
@@ -715,31 +713,29 @@
         ... }"
   [schema rschema]
   (reduce
-    (fn [m tuple-attr]
-      (reduce-indexed
-        (fn [m attr idx]
-          (update m attr assoc tuple-attr idx))
-        m
-        (-> schema tuple-attr :db/tupleAttrs)))
-    {}
-    (:db.type/tuple rschema)))
-
+   (fn [m tuple-attr]
+     (reduce-indexed
+      (fn [m attr idx]
+        (update m attr assoc tuple-attr idx))
+      m
+      (-> schema tuple-attr :db/tupleAttrs)))
+   {}
+   (:db.type/tuple rschema)))
 
 (defn- rschema [schema]
   (let [rschema (reduce-kv
-                  (fn [m attr keys->values]
-                    (if (keyword? keys->values)
-                      m
-                      (reduce-kv
-                        (fn [m key value]
-                          (reduce
-                            (fn [m prop]
-                              (assoc m prop (conj (get m prop #{}) attr)))
-                            m (attr->properties key value)))
-                        (update m :db/ident (fn [coll] (if coll (conj coll attr) #{attr}))) keys->values)))
-                  {} schema)]
+                 (fn [m attr keys->values]
+                   (if (keyword? keys->values)
+                     m
+                     (reduce-kv
+                      (fn [m key value]
+                        (reduce
+                         (fn [m prop]
+                           (assoc m prop (conj (get m prop #{}) attr)))
+                         m (attr->properties key value)))
+                      (update m :db/ident (fn [coll] (if coll (conj coll attr) #{attr}))) keys->values)))
+                 {} schema)]
     (assoc rschema :db/attrTuples (attrTuples schema rschema))))
-
 
 (defn- validate-schema-key [a k v expected]
   (when-not (or (nil? v)
@@ -750,26 +746,24 @@
                      :key       k
                      :value     v}))))
 
-
-
 (defn- validate-tuple-schema [a kv]
   (when (= :db.type/tuple (:db/valueType kv))
     (case (some #{:db/tupleAttrs :db/tupleTypes :db/tupleType} (keys kv))
       :db/tupleAttrs (when (not (vector? (:db/tupleAttrs kv)))
                        (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleAttrs ...} should be a vector}")
-                                {:error     :schema/validation
-                                 :attribute a
-                                 :key       :db/tupleAttrs})))
+                                       {:error     :schema/validation
+                                        :attribute a
+                                        :key       :db/tupleAttrs})))
       :db/tupleTypes (when (not (vector? (:db/tupleTypes kv)))
                        (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleTypes ...} should be a vector}")
-                                {:error     :schema/validation
-                                 :attribute a
-                                 :key       :db/tupleTypes})))
+                                       {:error     :schema/validation
+                                        :attribute a
+                                        :key       :db/tupleTypes})))
       :db/tupleType  (when (not (keyword? (:db/tupleType kv)))
-                      (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleType ...} should be a keyword}")
-                               {:error     :schema/validation
-                                :attribute a
-                                :key       :db/tupleType}))))))
+                       (throw (ex-info (str "Bad attribute specification for " a ": {:db/tupleType ...} should be a keyword}")
+                                       {:error     :schema/validation
+                                        :attribute a
+                                        :key       :db/tupleType}))))))
 
 (defn- validate-schema [schema]
   (doseq [[a kv] schema]
@@ -777,9 +771,9 @@
       (validate-schema-key a :db/isComponent (:db/isComponent kv) #{true false})
       (when (and comp? (not= (:db/valueType kv) :db.type/ref))
         (throw (ex-info (str "Bad attribute specification for " a ": {:db/isComponent true} should also have {:db/valueType :db.type/ref}")
-                 {:error     :schema/validation
-                  :attribute a
-                  :key       :db/isComponent}))))
+                        {:error     :schema/validation
+                         :attribute a
+                         :key       :db/isComponent}))))
     (validate-schema-key a :db/unique (:db/unique kv) #{:db.unique/value :db.unique/identity})
     (validate-schema-key a :db/valueType (:db/valueType kv) #{:db.type/ref :db.type/tuple})
     (validate-schema-key a :db/cardinality (:db/cardinality kv) #{:db.cardinality/one :db.cardinality/many})
@@ -1021,21 +1015,21 @@
   "Returns true if 'attr' is a homogeneous tuple attribute."
   [db attr]
   (and (tuple? db attr)
-    (-> db -schema attr :db/tupleType)))
+       (-> db -schema attr :db/tupleType)))
 
 (defn #?@(:clj  [^Boolean heterogeneous-tuple-attr?]
           :cljs [^boolean heterogeneous-tuple-attr?])
   "Returns true if 'attr' is an heterogeneous tuple attribute."
   [db attr]
   (and (tuple? db attr)
-    (-> db -schema attr :db/tupleTypes)))
+       (-> db -schema attr :db/tupleTypes)))
 
 (defn #?@(:clj  [^Boolean composite-tuple-attr?]
           :cljs [^boolean composite-tuple-attr?])
   "Returns true if 'attr' is a composite tuple attribute."
   [db attr]
   (and (tuple? db attr)
-    (-> db -schema attr :db/tupleAttrs)))
+       (-> db -schema attr :db/tupleAttrs)))
 
 (defn entid [db eid]
   {:pre [(db? db)]}
@@ -1133,7 +1127,7 @@
                      attr)]
           (when-not (db-idents attr)
             (raise "Bad entity attribute " attr " at " at ", not defined in current schema"
-              {:error :transact/schema :attribute attr :context at})))
+                   {:error :transact/schema :attribute attr :context at})))
         (raise "No schema found in db."
                {:error :transact/schema :attribute attr :context at})))))
 
@@ -1284,8 +1278,8 @@
 
 (defn- queue-tuple [queue tuple idx db e v]
   (let [tuple-value  (or (get queue tuple)
-                       (:v (first (-datoms db :eavt [e tuple])))
-                       (vec (repeat (-> db (-schema) (get tuple) :db/tupleAttrs count) nil)))
+                         (:v (first (-datoms db :eavt [e tuple])))
+                         (vec (repeat (-> db (-schema) (get tuple) :db/tupleAttrs count) nil)))
         tuple-value' (assoc tuple-value idx v)]
     (assoc queue tuple tuple-value')))
 
@@ -1293,17 +1287,17 @@
   "Assuming the attribute we are concerned with is :a and its associated value is 'a',
    returns {:a+b+c [a nil nil], :a+d [a, nil]}"
   (reduce-kv
-    (fn [queue tuple idx]
-      (queue-tuple queue tuple idx db e v))
-    queue
-    tuples))
+   (fn [queue tuple idx]
+     (queue-tuple queue tuple idx db e v))
+   queue
+   tuples))
 
 (defn- transact-report [report datom]
   (let [db      (:db-after report)
         a       (:a datom)
         report' (-> report
-                  (update-in [:db-after] with-datom datom)
-                  (update-in [:tx-data] conj datom))]
+                    (update-in [:db-after] with-datom datom)
+                    (update-in [:tx-data] conj datom))]
     (if (tuple-source? db a)
       (let [e      (:e datom)
             v      (if (datom-added datom) (:v datom) nil)
@@ -1501,26 +1495,26 @@
   [report]
   (let [db (:db-after report)]
     (reduce-kv
-      (fn [entities eid tuples+values]
-        (reduce-kv
-          (fn [entities tuple value]
-            (let [value   (if (every? nil? value) nil value)
-                  current (:v (first (-datoms db :eavt [eid tuple])))]
-              (cond
-                (= value current) entities
+     (fn [entities eid tuples+values]
+       (reduce-kv
+        (fn [entities tuple value]
+          (let [value   (if (every? nil? value) nil value)
+                current (:v (first (-datoms db :eavt [eid tuple])))]
+            (cond
+              (= value current) entities
                 ;; adds ::internal to meta-data to mean that these datoms were generated internally.
-                (nil? value)      (conj entities ^::internal [:db/retract eid tuple current])
-                :else             (conj entities ^::internal [:db/add eid tuple value]))))
-          entities
-          tuples+values))
-      []
-      (::queued-tuples report))))
+              (nil? value)      (conj entities ^::internal [:db/retract eid tuple current])
+              :else             (conj entities ^::internal [:db/add eid tuple value]))))
+        entities
+        tuples+values))
+     []
+     (::queued-tuples report))))
 
 (defn transact-tx-data [initial-report initial-es]
   (when-not (or (nil? initial-es)
-              (sequential? initial-es))
+                (sequential? initial-es))
     (raise "Bad transaction data " initial-es ", expected sequential collection"
-      {:error :transact/syntax, :tx-data initial-es}))
+           {:error :transact/syntax, :tx-data initial-es}))
   (let [has-tuples? (seq (-attrs-by (:db-after initial-report) :db.type/tuple))
         initial-es' (if has-tuples?
                       (interleave initial-es (repeat ::flush-tuples))
@@ -1535,9 +1529,9 @@
         (cond
           (empty? es)
           (-> report
-            (assoc-in [:tempids :db/current-tx] (current-tx report))
-            (update-in [:db-after :max-tx] inc)
-            (update :db-after persistent!))
+              (assoc-in [:tempids :db/current-tx] (current-tx report))
+              (update-in [:db-after :max-tx] inc)
+              (update :db-after persistent!))
 
           (nil? entity)
           (recur report entities)
@@ -1545,77 +1539,77 @@
           (= ::flush-tuples entity)
           (if (contains? report ::queued-tuples)
             (recur
-              (dissoc report ::queued-tuples)
-              (concat (flush-tuples report) entities))
+             (dissoc report ::queued-tuples)
+             (concat (flush-tuples report) entities))
             (recur report entities))
 
           (map? entity)
           (let [old-eid (:db/id entity)]
             (cond+
               ;; :db/current-tx / "datomic.tx" => tx
-              (tx-id? old-eid)
-              (let [id (current-tx report)]
-                (recur (allocate-eid report old-eid id)
-                  (cons (assoc entity :db/id id) entities)))
+             (tx-id? old-eid)
+             (let [id (current-tx report)]
+               (recur (allocate-eid report old-eid id)
+                      (cons (assoc entity :db/id id) entities)))
 
               ;; lookup-ref => resolved | error
-              (sequential? old-eid)
-              (let [id (entid-strict db old-eid)]
-                (recur report
-                  (cons (assoc entity :db/id id) entities)))
+             (sequential? old-eid)
+             (let [id (entid-strict db old-eid)]
+               (recur report
+                      (cons (assoc entity :db/id id) entities)))
 
               ;; upserted => explode | error
-              :let [upserted-eid (upsert-eid db entity)]
+             :let [upserted-eid (upsert-eid db entity)]
 
-              (some? upserted-eid)
-              (if (and (tempid? old-eid)
-                    (contains? tempids old-eid)
-                    (not= upserted-eid (get tempids old-eid)))
-                (retry-with-tempid initial-report report initial-es old-eid upserted-eid)
-                (do
+             (some? upserted-eid)
+             (if (and (tempid? old-eid)
+                      (contains? tempids old-eid)
+                      (not= upserted-eid (get tempids old-eid)))
+               (retry-with-tempid initial-report report initial-es old-eid upserted-eid)
+               (do
                   ;; schema tx
-                  (when (ds/schema-entity? entity)
-                    (if-let [attr-name (get-in db [:schema upserted-eid])]
-                      (when-let [invalid-updates (ds/find-invalid-schema-updates entity (get-in db [:schema attr-name]))]
-                        (when-not (empty? invalid-updates)
-                          (raise "Update not supported for these schema attributes"
-                            {:error :transact/schema :entity entity :invalid-updates invalid-updates})))
-                      (when (= :write (get-in db [:config :schema-flexibility]))
-                        (when (or (:db/cardinality entity) (:db/valueType entity))
-                          (when-not (ds/schema? entity)
-                            (raise "Incomplete schema transaction attributes, expected :db/ident, :db/valueType, :db/cardinality"
-                              {:error :transact/schema :entity entity}))))))
-                  (recur (allocate-eid report old-eid upserted-eid)
-                    (concat (explode db (assoc entity :db/id upserted-eid)) entities))))
+                 (when (ds/schema-entity? entity)
+                   (if-let [attr-name (get-in db [:schema upserted-eid])]
+                     (when-let [invalid-updates (ds/find-invalid-schema-updates entity (get-in db [:schema attr-name]))]
+                       (when-not (empty? invalid-updates)
+                         (raise "Update not supported for these schema attributes"
+                                {:error :transact/schema :entity entity :invalid-updates invalid-updates})))
+                     (when (= :write (get-in db [:config :schema-flexibility]))
+                       (when (or (:db/cardinality entity) (:db/valueType entity))
+                         (when-not (ds/schema? entity)
+                           (raise "Incomplete schema transaction attributes, expected :db/ident, :db/valueType, :db/cardinality"
+                                  {:error :transact/schema :entity entity}))))))
+                 (recur (allocate-eid report old-eid upserted-eid)
+                        (concat (explode db (assoc entity :db/id upserted-eid)) entities))))
 
               ;; resolved | allocated-tempid | tempid | nil => explode
-              (or (number? old-eid)
-                (nil? old-eid)
-                (string? old-eid))
-              (let [new-eid (cond
-                              (nil? old-eid) (next-eid db)
-                              (tempid? old-eid) (or (get tempids old-eid)
-                                                  (next-eid db))
-                              :else old-eid)
-                    new-entity (assoc entity :db/id new-eid)]
-                (when (ds/schema-entity? entity)
-                  (if-let [attr-name (get-in db [:schema new-eid])]
-                    (when-let [invalid-updates (ds/find-invalid-schema-updates entity (get-in db [:schema attr-name]))]
-                      (when-not (empty? invalid-updates)
-                        (raise "Update not supported for these schema attributes"
-                          {:error :transact/schema :entity entity :invalid-updates invalid-updates})))
-                    (when (= :write (get-in db [:config :schema-flexibility]))
-                      (when (or (:db/cardinality entity) (:db/valueType entity))
-                        (when-not (ds/schema? entity)
-                          (raise "Incomplete schema transaction attributes, expected :db/ident, :db/valueType, :db/cardinality"
-                            {:error :transact/schema :entity entity}))))))
-                (recur (allocate-eid report old-eid new-eid)
-                  (concat (explode db new-entity) entities)))
+             (or (number? old-eid)
+                 (nil? old-eid)
+                 (string? old-eid))
+             (let [new-eid (cond
+                             (nil? old-eid) (next-eid db)
+                             (tempid? old-eid) (or (get tempids old-eid)
+                                                   (next-eid db))
+                             :else old-eid)
+                   new-entity (assoc entity :db/id new-eid)]
+               (when (ds/schema-entity? entity)
+                 (if-let [attr-name (get-in db [:schema new-eid])]
+                   (when-let [invalid-updates (ds/find-invalid-schema-updates entity (get-in db [:schema attr-name]))]
+                     (when-not (empty? invalid-updates)
+                       (raise "Update not supported for these schema attributes"
+                              {:error :transact/schema :entity entity :invalid-updates invalid-updates})))
+                   (when (= :write (get-in db [:config :schema-flexibility]))
+                     (when (or (:db/cardinality entity) (:db/valueType entity))
+                       (when-not (ds/schema? entity)
+                         (raise "Incomplete schema transaction attributes, expected :db/ident, :db/valueType, :db/cardinality"
+                                {:error :transact/schema :entity entity}))))))
+               (recur (allocate-eid report old-eid new-eid)
+                      (concat (explode db new-entity) entities)))
 
               ;; trash => error
-              :else
-              (raise "Expected number, string or lookup ref for :db/id, got " old-eid
-                {:error :entity-id/syntax, :entity entity})))
+             :else
+             (raise "Expected number, string or lookup ref for :db/id, got " old-eid
+                    {:error :entity-id/syntax, :entity entity})))
 
           (sequential? entity)
           (let [[op e a v] entity]
@@ -1625,23 +1619,23 @@
                 (recur report (concat (apply f db args) entities)))
 
               (and (keyword? op)
-                (not (builtin-fn? op)))
+                   (not (builtin-fn? op)))
               (if-some [ident (entid db op)]
                 (let [fun (-> (-search db [ident :db/fn]) first :v)
                       args (next entity)]
                   (if (fn? fun)
                     (recur report (concat (apply fun db args) entities))
                     (raise "Entity " op " expected to have :db/fn attribute with fn? value"
-                      {:error :transact/syntax, :operation :db.fn/call, :tx-data entity})))
+                           {:error :transact/syntax, :operation :db.fn/call, :tx-data entity})))
                 (raise "Can’t find entity for transaction fn " op
-                  {:error :transact/syntax, :operation :db.fn/call, :tx-data entity}))
+                       {:error :transact/syntax, :operation :db.fn/call, :tx-data entity}))
 
               (and (tempid? e) (not= op :db/add))
               (raise "Can't use tempid in '" entity "'. Tempids are allowed in :db/add only"
-                {:error :transact/syntax, :op entity})
+                     {:error :transact/syntax, :op entity})
 
               (or (= op :db.fn/cas)
-                (= op :db/cas))
+                  (= op :db/cas))
               (let [[_ e a ov nv] entity
                     e (entid-strict db e)
                     _ (validate-attr a entity db)
@@ -1651,19 +1645,19 @@
                   (if (empty? datoms)
                     (recur (transact-add report [:db/add e a nv]) entities)
                     (raise ":db.fn/cas failed on datom [" e " " a " " (if (multival? db a) (map :v datoms) (:v (first datoms))) "], expected nil"
-                      {:error :transact/cas, :old (if (multival? db a) datoms (first datoms)), :expected ov, :new nv}))
+                           {:error :transact/cas, :old (if (multival? db a) datoms (first datoms)), :expected ov, :new nv}))
                   (let [ov (if (ref? db a) (entid-strict db ov) ov)
                         _ (validate-val nv entity db)]
                     (if (multival? db a)
                       (if (some (fn [^Datom d] (= (.-v d) ov)) datoms)
                         (recur (transact-add report [:db/add e a nv]) entities)
                         (raise ":db.fn/cas failed on datom [" e " " a " " (map :v datoms) "], expected " ov
-                          {:error :transact/cas, :old datoms, :expected ov, :new nv}))
+                               {:error :transact/cas, :old datoms, :expected ov, :new nv}))
                       (let [v (:v (first datoms))]
                         (if (= v ov)
                           (recur (transact-add report [:db/add e a nv]) entities)
                           (raise ":db.fn/cas failed on datom [" e " " a " " v "], expected " ov
-                            {:error :transact/cas, :old (first datoms), :expected ov, :new nv})))))))
+                                 {:error :transact/cas, :old (first datoms), :expected ov, :new nv})))))))
 
               (tx-id? e)
               (recur (allocate-eid report e (current-tx report)) (cons [op (current-tx report) a v] entities))
@@ -1686,34 +1680,34 @@
                 (recur (allocate-eid report v (next-eid db)) es))
 
               (and (homogeneous-tuple-attr? db a)
-                (> (count v) 8))
+                   (> (count v) 8))
               (raise "Cannot store more than 8 values for homogeneous tuple: " entity
-                {:error :transact/syntax, :tx-data entity})
+                     {:error :transact/syntax, :tx-data entity})
 
               (and (homogeneous-tuple-attr? db a)
-                (not (apply = (map type v))))
+                   (not (apply = (map type v))))
               (raise "Cannot store homogeneous tuple with values of different type: " entity
-                {:error :transact/syntax, :tx-data entity})
+                     {:error :transact/syntax, :tx-data entity})
 
               (and (homogeneous-tuple-attr? db a)
-                (not (s/valid? (-> db -schema a :db/tupleType) (first v))))
+                   (not (s/valid? (-> db -schema a :db/tupleType) (first v))))
               (raise "Cannot store homogeneous tuple. Values are of wrong type: " entity
-                {:error :transact/syntax, :tx-data entity})
+                     {:error :transact/syntax, :tx-data entity})
 
               (and (heterogeneous-tuple-attr? db a)
-                (not (= (count v) (count (-> db -schema a :db/tupleTypes)))))
+                   (not (= (count v) (count (-> db -schema a :db/tupleTypes)))))
               (raise (str "Cannot store heterogeneous tuple: expecting " (count (-> db -schema a :db/tupleTypes)) " values, got " (count v))
-                {:error :transact/syntax, :tx-data entity})
+                     {:error :transact/syntax, :tx-data entity})
 
               (and (heterogeneous-tuple-attr? db a)
-                (not (apply = (map s/valid? (-> db -schema a :db/tupleTypes) v))))
+                   (not (apply = (map s/valid? (-> db -schema a :db/tupleTypes) v))))
               (raise (str "Cannot store heterogeneous tuple: there is a mismatch between values " v " and their types " (-> db -schema a :db/tupleTypes))
-                {:error :transact/syntax, :tx-data entity})
+                     {:error :transact/syntax, :tx-data entity})
 
               (and (not (::internal (meta entity)))
-                (composite-tuple-attr? db a))
+                   (composite-tuple-attr? db a))
               (raise "Can’t modify tuple attrs directly: " entity
-                {:error :transact/syntax, :tx-data entity})
+                     {:error :transact/syntax, :tx-data entity})
 
               (= op :db/add)
               (recur (transact-add report entity) entities)
@@ -1726,7 +1720,7 @@
                   (if-some [old-datom (first (-search db [e a v]))]
                     (recur (transact-retract-datom report old-datom) entities)
                     (recur report
-                      entities)))
+                           entities)))
                 (recur report entities))
 
               (= op :db.fn/retractAttribute)
@@ -1734,17 +1728,17 @@
                 (let [_ (validate-attr a entity db)
                       datoms (vec (-search db [e a]))]
                   (recur (reduce transact-retract-datom report datoms)
-                    (concat (retract-components db datoms) entities)))
+                         (concat (retract-components db datoms) entities)))
                 (recur report entities))
 
               (or (= op :db.fn/retractEntity)
-                (= op :db/retractEntity))
+                  (= op :db/retractEntity))
               (if-let [e (entid db e)]
                 (let [e-datoms (vec (-search db [e]))
                       v-datoms (vec (mapcat (fn [a] (-search db [nil a e])) (-attrs-by db :db.type/ref)))
                       retracted-comps (retract-components db e-datoms)]
                   (recur (reduce transact-retract-datom report (concat e-datoms v-datoms))
-                    (concat retracted-comps entities)))
+                         (concat retracted-comps entities)))
                 (recur report entities))
 
               (= op :db/purge)
@@ -1763,7 +1757,7 @@
                   (if-let [e (entid history e)]
                     (let [datoms (vec (-search history [e a]))]
                       (recur (reduce transact-purge-datom report datoms)
-                        (concat (purge-components history datoms) entities)))
+                             (concat (purge-components history datoms) entities)))
                     (raise "Can't find entity with ID " e " to be purged" {:error :transact/purge, :operation op, :tx-data entity})))
                 (raise "Purge attribute is only available in temporal databases." {:error :transact/purge :operation op :tx-data entity}))
 
@@ -1775,7 +1769,7 @@
                           v-datoms (vec (mapcat (fn [a] (-search history [nil a e])) (-attrs-by history :db.type/ref)))
                           retracted-comps (purge-components history e-datoms)]
                       (recur (reduce transact-purge-datom report (concat e-datoms v-datoms))
-                        (concat retracted-comps entities)))
+                             (concat retracted-comps entities)))
                     (raise "Can't find entity with ID " e " to be purged" {:error :transact/purge, :operation op, :tx-data entity})))
                 (raise "Purge entity is only available in temporal databases." {:error :transact/purge :operation op :tx-data entity}))
 
@@ -1783,12 +1777,12 @@
               (if (-keep-history? db)
                 (let [history (HistoricalDB. db)
                       e-datoms (-> (search-temporal-indices db nil)
-                                 vec
-                                 (filter-before e db)
-                                 vec)
+                                   vec
+                                   (filter-before e db)
+                                   vec)
                       retracted-comps (purge-components history e-datoms)]
                   (recur (reduce transact-purge-datom report e-datoms)
-                    (concat retracted-comps entities)))
+                         (concat retracted-comps entities)))
                 (raise "Purge entity is only available in temporal databases." {:error :transact/purge :operation op :tx-data entity}))
 
               ;; assert required attributes
@@ -1800,10 +1794,10 @@
                 (if (empty? diff)
                   (recur report entities)
                   (raise "Entity " e " missing attributes " diff " of spec " a
-                    {:error :transact/ensure
-                     :operation op
-                     :tx-data entity
-                     :asserting-datoms asserting-datoms})))
+                         {:error :transact/ensure
+                          :operation op
+                          :tx-data entity
+                          :asserting-datoms asserting-datoms})))
 
               ;; assert entity predicates
               (= op :db.ensure/preds)
@@ -1811,9 +1805,9 @@
                     preds (assert-preds db-after entity)]
                 (if-not (empty? preds)
                   (raise "Entity " e " failed predicates " preds " of spec " a
-                    {:error :transact/ensure
-                     :operation op
-                     :tx-data entity})
+                         {:error :transact/ensure
+                          :operation op
+                          :tx-data entity})
                   (recur report entities)))
 
               :else
@@ -1827,7 +1821,7 @@
 
           :else
           (raise "Bad entity type at " entity ", expected map or vector"
-            {:error :transact/syntax, :tx-data entity}))))))
+                 {:error :transact/syntax, :tx-data entity}))))))
 
 (defn transact-entities-directly [initial-report initial-es]
   (loop [report (update initial-report :db-after persistent!)
